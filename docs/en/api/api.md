@@ -1,0 +1,5185 @@
+# torch-rechub API Reference
+
+> Generated from AST by scanning `torch_rechub/`. Files named `__init__.py` are excluded.
+
+## `basic/`
+
+### `activation`
+
+Module: `torch_rechub.basic.activation`
+
+#### `activation_layer`
+
+```python
+activation_layer(act_name)
+```
+
+Construct activation layers
+
+**Parameters**
+
+- `act_name` (`str or nn.Module, name of activation function`)
+
+**Returns**
+
+- `act_layer` (`activation layer`)
+
+#### `Dice`
+
+The Dice activation function mentioned in the `DIN paper
+https://arxiv.org/abs/1706.06978`
+
+##### `Dice.forward`
+
+```python
+forward(self, x: torch.Tensor)
+```
+
+No docstring provided.
+
+### `callback`
+
+Module: `torch_rechub.basic.callback`
+
+#### `EarlyStopper`
+
+Early stops training if the validation metric does not improve.
+
+**Parameters**
+
+- `patience` (`int`): How long to wait after the validation metric last improved.
+- `mode` (`str`): ``"max"`` for metrics where larger is better and ``"min"``
+  for metrics where smaller is better (default = ``"max"``).
+
+##### `EarlyStopper.stop_training`
+
+```python
+stop_training(self, val_auc, weights)
+```
+
+whether to stop training.
+
+**Parameters**
+
+- `val_auc` (`float`): metric score on validation data. The name is kept
+  for backward compatibility.
+- `weights` (`tensor`): the weights of model
+
+### `features`
+
+Module: `torch_rechub.basic.features`
+
+#### `SequenceFeature`
+
+The Feature Class for Sequence feature or multi-hot feature.
+In recommendation, there are many user behaviour features which we want to take the sequence model
+and tag featurs (multi hot) which we want to pooling. Note that if you use this feature, you must padding
+the feature value before training.
+
+**Parameters**
+
+- `name` (`str`): feature's name.
+- `vocab_size` (`int`): vocabulary size of embedding table.
+- `embed_dim` (`int`): embedding vector's length
+- `pooling` (`str`): pooling method, support `["mean", "sum", "concat"]` (default=`"mean"`)
+- `shared_with` (`str`): the another feature name which this feature will shared with embedding.
+- `padding_idx` (`int, optional`): If specified, the entries at padding_idx will be masked 0 in InputMask Layer.
+- `initializer` (`Initializer`): Initializer the embedding layer weight.
+
+##### `SequenceFeature.get_embedding_layer`
+
+```python
+get_embedding_layer(self)
+```
+
+No docstring provided.
+
+#### `SparseFeature`
+
+The Feature Class for Sparse feature.
+
+**Parameters**
+
+- `name` (`str`): feature's name.
+- `vocab_size` (`int`): vocabulary size of embedding table.
+- `embed_dim` (`int`): embedding vector's length
+- `shared_with` (`str`): the another feature name which this feature will shared with embedding.
+- `padding_idx` (`int, optional`): If specified, the entries at padding_idx will be masked 0 in InputMask Layer.
+- `initializer` (`Initializer`): Initializer the embedding layer weight.
+
+##### `SparseFeature.get_embedding_layer`
+
+```python
+get_embedding_layer(self)
+```
+
+No docstring provided.
+
+#### `DenseFeature`
+
+The Feature Class for Dense feature.
+
+**Parameters**
+
+- `name` (`str`): feature's name.
+- `embed_dim` (`int`): embedding vector's length, the value fixed `1`. If you put a vector (torch.tensor) , replace the embed_dim with your vector dimension.
+
+### `initializers`
+
+Module: `torch_rechub.basic.initializers`
+
+#### `RandomNormal`
+
+Returns an embedding initialized with a normal distribution.
+
+**Parameters**
+
+- `mean` (`float`): the mean of the normal distribution
+- `std` (`float`): the standard deviation of the normal distribution
+
+#### `RandomUniform`
+
+Returns an embedding initialized with a uniform distribution.
+
+**Parameters**
+
+- `minval` (`float`): Lower bound of the range of random values of the uniform distribution.
+- `maxval` (`float`): Upper bound of the range of random values of the uniform distribution.
+
+#### `XavierNormal`
+
+Returns an embedding initialized with  the method described in
+`Understanding the difficulty of training deep feedforward neural networks`
+- Glorot, X. & Bengio, Y. (2010), using a uniform distribution.
+
+**Parameters**
+
+- `gain` (`float`): stddev = gain*sqrt(2 / (fan_in + fan_out))
+
+#### `XavierUniform`
+
+Returns an embedding initialized with the method described in
+`Understanding the difficulty of training deep feedforward neural networks`
+- Glorot, X. & Bengio, Y. (2010), using a uniform distribution.
+
+**Parameters**
+
+- `gain` (`float`): stddev = gain*sqrt(6 / (fan_in + fan_out))
+
+#### `Pretrained`
+
+Creates Embedding instance from given 2-dimensional FloatTensor.
+
+**Parameters**
+
+- `embedding_weight` (`Tensor or ndarray or List[List[int]]`): FloatTensor containing weights for the Embedding.
+  First dimension is being passed to Embedding as ``num_embeddings``, second as ``embedding_dim``.
+- `freeze` (`boolean, optional`): If ``True``, the tensor does not get updated in the learning process.
+
+### `layers`
+
+Module: `torch_rechub.basic.layers`
+
+#### `PredictionLayer`
+
+Prediction layer.
+
+**Parameters**
+
+- `task_type` (`{'classification', 'regression'}`): Classification applies sigmoid to logits; regression returns logits.
+
+##### `PredictionLayer.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+#### `EmbeddingLayer`
+
+General embedding layer.
+
+Stores per-feature embedding tables in ``embed_dict``.
+
+**Parameters**
+
+- `features` (`list`): Feature objects to create embedding tables for.
+
+**Shape**
+
+- **Input**
+  - `x` (`dict`): ``{feature_name: feature_value}``; sequence values shape ``(B, L)``,
+    sparse/dense values shape ``(B,)``.
+  - `features` (`list`): Feature list for lookup.
+  - `squeeze_dim` (`bool, default False`): Whether to flatten embeddings.
+- **Output**
+  - Dense only: ``(B, num_dense)``.
+  - Sparse: ``(B, num_features, embed_dim)`` or flattened.
+  - Sequence: same as sparse or ``(B, num_seq, L, embed_dim)`` when ``pooling="concat"``.
+  - Mixed: flattened sparse plus dense when ``squeeze_dim=True``.
+
+##### `EmbeddingLayer.forward`
+
+```python
+forward(self, x, features, squeeze_dim = False)
+```
+
+No docstring provided.
+
+#### `InputMask`
+
+Return input masks from features.
+
+**Shape**
+
+- **Input**
+  - `x` (`dict`): ``{feature_name: feature_value}``; sequence ``(B, L)``, sparse/dense ``(B,)``.
+  - `features` (`list or SparseFeature or SequenceFeature`): All elements must be sparse or sequence features.
+- **Output**
+  - Sparse: ``(B, num_features)``
+  - Sequence: ``(B, num_seq, seq_length)``
+
+##### `InputMask.forward`
+
+```python
+forward(self, x, features)
+```
+
+No docstring provided.
+
+#### `LR`
+
+Logistic regression module.
+
+**Parameters**
+
+- `input_dim` (`int`): Input dimension.
+- `sigmoid` (`bool, default False`): Apply sigmoid to output when True.
+
+**Shape**
+
+Input: ``(B, input_dim)``
+Output: ``(B, 1)``
+
+##### `LR.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+#### `ConcatPooling`
+
+Keep original sequence embedding shape.
+
+**Shape**
+
+Input: ``(B, L, D)``  
+Output: ``(B, L, D)``
+
+##### `ConcatPooling.forward`
+
+```python
+forward(self, x, mask = None)
+```
+
+No docstring provided.
+
+#### `AveragePooling`
+
+Mean pooling over sequence embeddings.
+
+**Shape**
+
+- **Input**
+  - `x` (```(B, L, D)```)
+  - `mask` (```(B, 1, L)```)
+- **Output**
+  ``(B, D)``
+
+##### `AveragePooling.forward`
+
+```python
+forward(self, x, mask = None)
+```
+
+No docstring provided.
+
+#### `SumPooling`
+
+Sum pooling over sequence embeddings.
+
+**Shape**
+
+- **Input**
+  - `x` (```(B, L, D)```)
+  - `mask` (```(B, 1, L)```)
+- **Output**
+  ``(B, D)``
+
+##### `SumPooling.forward`
+
+```python
+forward(self, x, mask = None)
+```
+
+No docstring provided.
+
+#### `MLP`
+
+Multi-layer perceptron with BN/activation/dropout per linear layer.
+
+**Parameters**
+
+- `input_dim` (`int`): Input dimension of the first linear layer.
+- `output_layer` (`bool, default True`): If True, append a final Linear(*,1).
+- `dims` (`list, default []`): Hidden layer sizes.
+- `dropout` (`float, default 0`): Dropout probability.
+- `activation` (`str, default 'relu'`): Activation function (sigmoid, relu, prelu, dice, softmax).
+- `batchnorm` (`bool, default True`): Include BatchNorm after each hidden Linear. Disable for tiny RQ-VAE
+  batches; the default preserves existing ranking/matching behaviour.
+
+**Shape**
+
+Input: ``(B, input_dim)``  
+Output: ``(B, 1)`` or ``(B, dims[-1])``
+
+##### `MLP.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+#### `FM`
+
+Factorization Machine for 2nd-order interactions.
+
+**Parameters**
+
+- `reduce_sum` (`bool, default True`): Sum over embed dim (inner product) when True; otherwise keep dim.
+
+**Shape**
+
+Input: ``(B, num_features, embed_dim)``  
+Output: ``(B, 1)`` or ``(B, embed_dim)``
+
+##### `FM.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+#### `CIN`
+
+Compressed Interaction Network.
+
+**Parameters**
+
+- `input_dim` (`int`): Input dimension.
+- `cin_size` (`list[int]`): Output channels per Conv1d layer.
+- `split_half` (`bool, default True`): Split channels except last layer.
+
+**Shape**
+
+Input: ``(B, num_features, embed_dim)``  
+Output: ``(B, 1)``
+
+##### `CIN.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+#### `CrossLayer`
+
+Cross layer.
+
+**Parameters**
+
+- `input_dim` (`int`): Input dimension.
+
+##### `CrossLayer.forward`
+
+```python
+forward(self, x_0, x_i)
+```
+
+No docstring provided.
+
+#### `CrossNetwork`
+
+CrossNetwork from DCN.
+
+**Parameters**
+
+- `input_dim` (`int`): Input dimension.
+- `num_layers` (`int`): Number of cross layers.
+
+**Shape**
+
+Input: ``(B, *)``  
+Output: ``(B, *)``
+
+##### `CrossNetwork.forward`
+
+```python
+forward(self, x)
+```
+
+:param x: Float tensor of size ``(batch_size, num_fields, embed_dim)``
+
+#### `CrossNetV2`
+
+DCNv2-style cross network.
+
+**Parameters**
+
+- `input_dim` (`int`): Input dimension.
+- `num_layers` (`int`): Number of cross layers.
+
+##### `CrossNetV2.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+#### `CrossNetMix`
+
+CrossNetMix with MOE and nonlinear low-rank transforms.
+
+**Notes**
+
+Input: float tensor ``(B, num_fields, embed_dim)``.
+
+##### `CrossNetMix.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+#### `SENETLayer`
+
+SENet-style feature gating.
+
+**Parameters**
+
+- `num_fields` (`int`): Number of feature fields.
+- `reduction_ratio` (`int, default=3`): Reduction ratio for the bottleneck MLP.
+
+##### `SENETLayer.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+#### `BiLinearInteractionLayer`
+
+Bilinear feature interaction (FFM-style).
+
+**Parameters**
+
+- `input_dim` (`int`): Input dimension.
+- `num_fields` (`int`): Number of feature fields.
+- `bilinear_type` (`{'field_all', 'field_each', 'field_interaction'}, default 'field_interaction'`): Bilinear interaction variant.
+
+##### `BiLinearInteractionLayer.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+#### `MultiInterestSA`
+
+Self-attention multi-interest module (Comirec).
+
+**Parameters**
+
+- `embedding_dim` (`int`): Item embedding dimension.
+- `interest_num` (`int`): Number of interests.
+- `hidden_dim` (`int, optional`): Hidden dimension; defaults to ``4 * embedding_dim`` if None.
+
+**Shape**
+
+- **Input**
+  - `seq_emb` (```(B, L, D)```)
+  - `mask` (```(B, L, 1)```)
+- **Output**
+  ``(B, interest_num, D)``
+
+##### `MultiInterestSA.forward`
+
+```python
+forward(self, seq_emb, mask = None)
+```
+
+No docstring provided.
+
+#### `CapsuleNetwork`
+
+Capsule network for multi-interest (MIND/Comirec).
+
+**Parameters**
+
+- `embedding_dim` (`int`): Item embedding dimension.
+- `seq_len` (`int`): Sequence length.
+- `bilinear_type` (`{0, 1, 2}, default 2`): 0 for MIND, 2 for ComirecDR.
+- `interest_num` (`int, default 4`): Number of interests.
+- `routing_times` (`int, default 3`): Routing iterations.
+- `relu_layer` (`bool, default False`): Whether to apply ReLU after routing.
+
+**Shape**
+
+- **Input**
+  - `seq_emb` (```(B, L, D)```)
+  - `mask` (```(B, L, 1)```)
+- **Output**
+  ``(B, interest_num, D)``
+
+##### `CapsuleNetwork.forward`
+
+```python
+forward(self, item_eb, mask)
+```
+
+No docstring provided.
+
+#### `FFM`
+
+The Field-aware Factorization Machine module, mentioned in the `FFM paper
+<https://dl.acm.org/doi/abs/10.1145/2959100.2959134>`. It explicitly models
+multi-channel second-order feature interactions, with each feature filed
+corresponding to one channel.
+
+**Parameters**
+
+- `num_fields` (`int`): number of feature fields.
+- `reduce_sum` (`bool`): whether to sum in embed_dim (default = `True`).
+
+**Shape**
+
+    - Input: `(batch_size, num_fields, num_fields, embed_dim)`
+    - Output: `(batch_size, num_fields*(num_fields-1)/2, 1)` or `(batch_size, num_fields*(num_fields-1)/2, embed_dim)`
+
+##### `FFM.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+#### `CEN`
+
+The Compose-Excitation Network module, mentioned in the `FAT-DeepFFM paper
+<https://arxiv.org/abs/1905.06336>`, a modified version of
+`Squeeze-and-Excitation Network” (SENet) (Hu et al., 2017)`. It is used to
+highlight the importance of second-order feature crosses.
+
+**Parameters**
+
+- `embed_dim` (`int`): the dimensionality of categorical value embedding.
+- `num_field_crosses` (`int`): the number of second order crosses between feature fields.
+- `reduction_ratio` (`int`): the between the dimensions of input layer and hidden layer of the MLP module.
+
+**Shape**
+
+    - Input: `(batch_size, num_fields, num_fields, embed_dim)`
+    - Output: `(batch_size, num_fields*(num_fields-1)/2 * embed_dim)`
+
+##### `CEN.forward`
+
+```python
+forward(self, em)
+```
+
+No docstring provided.
+
+#### `HSTULayer`
+
+Dense HSTU layer with the reference rel_bias attention equation.
+
+Implements HSTU Eq. 2-4 from *Actions Speak Louder than Words*:
+
+- Eq. 2 — ``U, V, Q, K = Split(SiLU(f_1(LayerNorm(x))))``: a **single**
+  ``SiLU`` is applied to the joint projection **before** the split, so all
+  four of ``U, V, Q, K`` go through the non-linearity.
+- Eq. 3 — ``A(x) V(x) = (SiLU(Q K^T + rab^{p,t}) / N) V(x)``: the
+  learnable bucketed (position-diff, time-diff) bias ``rab^{p,t}`` is added
+  to scores **before** the ``SiLU/N`` activation.
+- Eq. 4 — ``Y(x) = f_2(LayerNorm(A V) * U)``: a single linear ``f_2`` is
+  applied to the gated attention output.
+
+The external residual ``x + Layer(x)`` is added by :class:`HSTUBlock`.
+
+**Parameters**
+
+- `d_model` (`Hidden dimension. Must be divisible by ``n_heads``.`)
+- `n_heads` (`Number of attention heads.`)
+- `dqk` (`Query/key dim per head.`)
+- `dv` (`Value/u dim per head.`)
+- `dropout` (`Dropout applied to the gated attention output before the`): final projection.
+- `max_seq_len` (`Maximum size of the relative-position table inside ``rab``.`): Attention is divided by the actual padded input length ``N``.
+- `num_time_buckets` (`Number of time-difference buckets in ``rab``.`)
+- `time_bucket_fn` (```'sqrt'`` or ``'log'`` bucketization in ``rab``.`)
+- `time_bucket_divisor` (`Bucket-range divisor in ``rab``.`)
+- `time_bucket_unit` (```'minutes'`` or ``'seconds'`` for time-diff`): bucketization in ``rab``.
+
+**Shape**
+
+    - ``x``: ``(batch_size, seq_len, d_model)``.
+    - ``padding_mask``: ``(batch_size, seq_len)`` bool, ``True`` for valid
+      tokens. Optional; when provided, padded key positions are masked.
+    - ``time_diffs``: ``(batch_size, seq_len)`` seconds delta from a single
+      anchor. Optional; when ``None``, ``rab`` falls back to position-only
+      bias.
+    - Output: ``(batch_size, seq_len, d_model)``.
+
+##### `HSTULayer.forward`
+
+```python
+forward(self, x, padding_mask = None, time_diffs = None)
+```
+
+Forward pass of one HSTU Eq. 2-4 layer.
+
+**Parameters**
+
+- `x` (`Tensor`): Hidden states, shape ``(batch_size, seq_len, d_model)``.
+- `padding_mask` (`Tensor, optional`): Boolean mask with shape
+  ``(batch_size, seq_len)``; ``True`` marks valid tokens.
+- `time_diffs` (`Tensor, optional`): Per-position seconds delta from a
+  single anchor, shape ``(batch_size, seq_len)``. Used by
+  ``rab^{p,t}``; when omitted, attention receives position-only
+  relative bias.
+
+**Returns**
+
+- `Tensor` (`Layer output before the external residual, shape ``(batch_size, seq_len, d_model)``.`)
+
+#### `HSTUBlock`
+
+Stack of :class:`HSTULayer` modules with **external residual** wiring.
+
+Each layer is wrapped as ``x = x + Layer(x)``, matching the HSTU paper /
+Meta reference. ``num_time_buckets`` / ``time_bucket_fn`` /
+``time_bucket_divisor`` / ``time_bucket_unit`` are forwarded to every
+layer's ``rab`` module.
+
+**Shape**
+
+    - Input: ``(batch_size, seq_len, d_model)``
+    - Output: ``(batch_size, seq_len, d_model)``
+
+##### `HSTUBlock.forward`
+
+```python
+forward(self, x, padding_mask = None, time_diffs = None)
+```
+
+Apply stacked HSTU layers with external residuals.
+
+**Parameters**
+
+- `x` (`Tensor`): Hidden states, shape ``(batch_size, seq_len, d_model)``.
+- `padding_mask` (`Tensor, optional`): Boolean mask with shape
+  ``(batch_size, seq_len)``; ``True`` marks valid tokens.
+- `time_diffs` (`Tensor, optional`): Per-position seconds delta from a
+  single anchor, shape ``(batch_size, seq_len)``.
+
+**Returns**
+
+- `Tensor` (`Output hidden states, shape ``(batch_size, seq_len, d_model)``.`)
+
+#### `InteractingLayer`
+
+Multi-head Self-Attention based Interacting Layer, used in AutoInt model.
+
+**Parameters**
+
+- `embed_dim` (`int`): the embedding dimension.
+- `num_heads` (`int`): the number of attention heads (default=2).
+- `dropout` (`float`): the dropout rate (default=0.0).
+- `residual` (`bool`): whether to use residual connection (default=True).
+
+**Shape**
+
+    - Input: `(batch_size, num_fields, embed_dim)`
+    - Output: `(batch_size, num_fields, embed_dim)`
+
+##### `InteractingLayer.forward`
+
+```python
+forward(self, x)
+```
+
+**Parameters**
+
+- `x` (`input tensor with shape (batch_size, num_fields, embed_dim)`)
+
+### `loss_func`
+
+Module: `torch_rechub.basic.loss_func`
+
+#### `RegularizationLoss`
+
+Unified L1/L2 regularization for embedding and dense parameters.
+
+**Parameters**
+
+- `embedding_l1` (`float, default=0.0`): L1 coefficient for embedding parameters.
+- `embedding_l2` (`float, default=0.0`): L2 coefficient for embedding parameters.
+- `dense_l1` (`float, default=0.0`): L1 coefficient for dense (non-embedding) parameters.
+- `dense_l2` (`float, default=0.0`): L2 coefficient for dense (non-embedding) parameters.
+
+**Examples**
+
+```python
+>>> reg_loss_fn = RegularizationLoss(embedding_l2=1e-5, dense_l2=1e-5)
+>>> reg_loss = reg_loss_fn(model)
+>>> total_loss = task_loss + reg_loss
+```
+
+##### `RegularizationLoss.forward`
+
+```python
+forward(self, model)
+```
+
+No docstring provided.
+
+#### `HingeLoss`
+
+Hinge loss for pairwise learning.
+
+**Notes**
+
+Reference: https://github.com/ustcml/RecStudio/blob/main/recstudio/model/loss_func.py
+
+##### `HingeLoss.forward`
+
+```python
+forward(self, pos_score, neg_score, in_batch_neg = False)
+```
+
+No docstring provided.
+
+#### `BPRLoss`
+
+No docstring provided.
+
+##### `BPRLoss.forward`
+
+```python
+forward(self, pos_score, neg_score, in_batch_neg = False)
+```
+
+No docstring provided.
+
+#### `NCELoss`
+
+Noise Contrastive Estimation (NCE) loss for recommender systems.
+
+**Parameters**
+
+- `temperature` (`float, default=1.0`): Temperature for scaling logits.
+- `ignore_index` (`int, default=0`): Target index to ignore.
+- `reduction` (`{'mean', 'sum', 'none'}, default='mean'`): Reduction applied to the output.
+
+**Notes**
+
+- Gutmann & Hyvärinen (2010), Noise-contrastive estimation.
+- HLLM: Hierarchical Large Language Model for Recommendation.
+
+**Examples**
+
+```python
+>>> nce_loss = NCELoss(temperature=0.1)
+>>> logits = torch.randn(32, 1000)
+>>> targets = torch.randint(0, 1000, (32,))
+>>> loss = nce_loss(logits, targets)
+```
+
+##### `NCELoss.forward`
+
+```python
+forward(self, logits, targets)
+```
+
+Compute NCE loss.
+
+**Parameters**
+
+- `logits` (`torch.Tensor`): Model output logits of shape (batch_size, vocab_size)
+- `targets` (`torch.Tensor`): Target indices of shape (batch_size,)
+
+**Returns**
+
+- `torch.Tensor` (`NCE loss value`)
+
+#### `InBatchNCELoss`
+
+In-batch NCE loss with explicit negatives.
+
+**Parameters**
+
+- `temperature` (`float, default=0.1`): Temperature for scaling logits.
+- `ignore_index` (`int, default=0`): Target index to ignore.
+- `reduction` (`{'mean', 'sum', 'none'}, default='mean'`): Reduction applied to the output.
+
+**Examples**
+
+```python
+>>> loss_fn = InBatchNCELoss(temperature=0.1)
+>>> embeddings = torch.randn(32, 256)
+>>> item_embeddings = torch.randn(1000, 256)
+>>> targets = torch.randint(0, 1000, (32,))
+>>> loss = loss_fn(embeddings, item_embeddings, targets)
+```
+
+##### `InBatchNCELoss.forward`
+
+```python
+forward(self, embeddings, item_embeddings, targets)
+```
+
+Compute in-batch NCE loss.
+
+**Parameters**
+
+- `embeddings` (`torch.Tensor`): User/query embeddings of shape (batch_size, embedding_dim)
+- `item_embeddings` (`torch.Tensor`): Item embeddings of shape (vocab_size, embedding_dim)
+- `targets` (`torch.Tensor`): Target item indices of shape (batch_size,)
+
+**Returns**
+
+- `torch.Tensor` (`In-batch NCE loss value`)
+
+### `metaoptimizer`
+
+Module: `torch_rechub.basic.metaoptimizer`
+
+#### `MetaBalance`
+
+MetaBalance Optimizer
+   This method is used to scale the gradient and balance the gradient of each task
+
+**Parameters**
+
+- `parameters` (`list`): the parameters of model
+- `relax_factor` (`float, optional`): the relax factor of gradient scaling (default: 0.7)
+- `beta` (`float, optional`): the coefficient of moving average (default: 0.9)
+
+##### `MetaBalance.step`
+
+```python
+step(self, losses)
+```
+
+_summary_
+
+**Parameters**
+
+- `losses` (`_type_`): _description_
+
+**Raises**
+
+- `RuntimeError` (`_description_`)
+
+### `metric`
+
+Module: `torch_rechub.basic.metric`
+
+#### `auc_score`
+
+```python
+auc_score(y_true, y_pred)
+```
+
+No docstring provided.
+
+#### `get_user_pred`
+
+```python
+get_user_pred(y_true, y_pred, users)
+```
+
+divide the result into different group by user id
+
+**Parameters**
+
+- `y_true` (`array`): all true labels of the data
+- `y_pred` (`array`): the predicted score
+- `users` (`array`): user id
+
+**Returns**
+
+- `user_pred` (`dict`): {userid: values}, key is user id and value is the labels and scores of each user
+
+#### `gauc_score`
+
+```python
+gauc_score(y_true, y_pred, users, weights = None)
+```
+
+compute GAUC
+
+Users with only one label class are excluded from the weighted average.
+
+**Parameters**
+
+- `y_true` (`array`): dim(N, ), all true labels of the data
+- `y_pred` (`array`): dim(N, ), the predicted score
+- `users` (`array`): dim(N, ), user id
+- `weight` (`dict`): {userid: weight_value}, it contains weights for each group.
+  if it is None, the weight is equal to the number
+  of times the user is recommended
+
+**Returns**
+
+- `score` (`float, GAUC`)
+
+#### `ndcg_score`
+
+```python
+ndcg_score(y_true, y_pred, topKs = None)
+```
+
+No docstring provided.
+
+#### `hit_score`
+
+```python
+hit_score(y_true, y_pred, topKs = None)
+```
+
+No docstring provided.
+
+#### `mrr_score`
+
+```python
+mrr_score(y_true, y_pred, topKs = None)
+```
+
+No docstring provided.
+
+#### `recall_score`
+
+```python
+recall_score(y_true, y_pred, topKs = None)
+```
+
+No docstring provided.
+
+#### `precision_score`
+
+```python
+precision_score(y_true, y_pred, topKs = None)
+```
+
+No docstring provided.
+
+#### `topk_metrics`
+
+```python
+topk_metrics(y_true, y_pred, topKs = None)
+```
+
+choice topk metrics and compute it
+the metrics contains 'ndcg', 'mrr', 'recall', 'precision' and 'hit'
+
+**Parameters**
+
+- `y_true` (`dict`): {userid, item_ids}, the key is user id and the value is the list that contains the items the user interacted
+- `y_pred` (`dict`): {userid, item_ids}, the key is user id and the value is the list that contains the items recommended
+- `topKs` (`list or tuple`): if you want to get top5 and top10, topKs=(5, 10)
+
+**Returns**
+
+- `results` (`dict`): {metric_name: metric_values}, it contains five metrics, 'ndcg', 'recall', 'mrr', 'hit', 'precision'
+
+#### `log_loss`
+
+```python
+log_loss(y_true, y_pred)
+```
+
+No docstring provided.
+
+#### `diversity_score`
+
+```python
+diversity_score(y_pred, item_embeddings, topKs = None)
+```
+
+Intra-List Diversity (ILD): average pairwise cosine distance within each user's recommendation list.
+
+A higher score means the recommended items are more different from each other,
+indicating the model is not just recommending similar items repeatedly.
+
+**Parameters**
+
+- `y_pred` (`dict`): {userid: [item_ids]}, recommended items per user
+- `item_embeddings` (`dict or np.ndarray`): item vectors. If dict: {item_id: np.array};
+  if 2D array: indexed by item_id (row = item_id)
+- `topKs` (`list or tuple`): e.g. [5, 10]
+
+**Returns**
+
+- `results` (`dict`): {'Diversity': ['Diversity@5: 0.xxxx', ...]}
+
+#### `coverage_score`
+
+```python
+coverage_score(y_pred, all_items, topKs = None)
+```
+
+Catalog Coverage: fraction of all items that appear in at least one user's recommendation list.
+
+A higher score means the model recommends a wider variety of items across all users,
+rather than always recommending the same popular items.
+
+**Parameters**
+
+- `y_pred` (`dict`): {userid: [item_ids]}, recommended items per user
+- `all_items` (`set or list`): all unique item ids in the catalog
+- `topKs` (`list or tuple`): e.g. [5, 10]
+
+**Returns**
+
+- `results` (`dict`): {'Coverage': ['Coverage@5: 0.xxxx', ...]}
+
+#### `novelty_score`
+
+```python
+novelty_score(y_pred, item_popularity, topKs = None)
+```
+
+Mean Self-Information: measures how "surprising" or niche the recommendations are.
+
+For each recommended item, self-information = -log2(popularity).
+Popular items have low self-information; long-tail items have high self-information.
+A higher novelty score means the model recommends more niche items.
+
+**Parameters**
+
+- `y_pred` (`dict`): {userid: [item_ids]}, recommended items per user
+- `item_popularity` (`dict`): {item_id: float}, interaction probability of each item
+  (e.g. item_count / total_interactions). Values should be in (0, 1].
+- `topKs` (`list or tuple`): e.g. [5, 10]
+
+**Returns**
+
+- `results` (`dict`): {'Novelty': ['Novelty@5: x.xxxx', ...]}
+
+### `tracking`
+
+Module: `torch_rechub.basic.tracking`
+
+#### `BaseLogger`
+
+Base interface for experiment tracking backends.
+
+**Methods**
+
+- `log_metrics(metrics, step=None)`: Record scalar metrics at a given step.
+- `log_hyperparams(params)`: Store hyperparameters and run configuration.
+- `finish()`: Flush pending logs and release resources.
+
+##### `BaseLogger.log_metrics`
+
+```python
+log_metrics(self, metrics: Dict[str, Any], step: Optional[int] = None) -> None
+```
+
+Log metrics to the tracking backend.
+
+**Parameters**
+
+- `metrics` (`dict of str to Any`): Metric name-value pairs to record.
+- `step` (`int, optional`): Explicit global step or epoch index. When ``None``, the backend
+  uses its own default step handling.
+
+##### `BaseLogger.log_hyperparams`
+
+```python
+log_hyperparams(self, params: Dict[str, Any]) -> None
+```
+
+Log experiment hyperparameters.
+
+**Parameters**
+
+- `params` (`dict of str to Any`): Hyperparameters or configuration values to persist with the run.
+
+##### `BaseLogger.finish`
+
+```python
+finish(self) -> None
+```
+
+Finalize logging and free any backend resources.
+
+#### `WandbLogger`
+
+Weights & Biases logger implementation.
+
+**Parameters**
+
+- `project` (`str`): Name of the wandb project to log to.
+- `name` (`str, optional`): Display name for the run.
+- `config` (`dict, optional`): Initial hyperparameter configuration to record.
+- `tags` (`list of str, optional`): Optional tags for grouping runs.
+- `notes` (`str, optional`): Long-form notes shown in the run overview.
+- `dir` (`str, optional`): Local directory for wandb artifacts and cache.
+- `**kwargs` (`dict`): Additional keyword arguments forwarded to ``wandb.init``.
+
+**Raises**
+
+- `ImportError`: If ``wandb`` is not installed in the current environment.
+
+##### `WandbLogger.log_metrics`
+
+```python
+log_metrics(self, metrics: Dict[str, Any], step: Optional[int] = None) -> None
+```
+
+No docstring provided.
+
+##### `WandbLogger.log_hyperparams`
+
+```python
+log_hyperparams(self, params: Dict[str, Any]) -> None
+```
+
+No docstring provided.
+
+##### `WandbLogger.finish`
+
+```python
+finish(self) -> None
+```
+
+No docstring provided.
+
+#### `SwanLabLogger`
+
+SwanLab logger implementation.
+
+**Parameters**
+
+- `project` (`str, optional`): Project identifier for grouping experiments.
+- `experiment_name` (`str, optional`): Display name for the experiment or run.
+- `description` (`str, optional`): Text description shown alongside the run.
+- `config` (`dict, optional`): Hyperparameters or configuration to log at startup.
+- `logdir` (`str, optional`): Directory where logs and artifacts are stored.
+- `**kwargs` (`dict`): Additional keyword arguments forwarded to ``swanlab.init``.
+
+**Raises**
+
+- `ImportError`: If ``swanlab`` is not installed in the current environment.
+
+##### `SwanLabLogger.log_metrics`
+
+```python
+log_metrics(self, metrics: Dict[str, Any], step: Optional[int] = None) -> None
+```
+
+No docstring provided.
+
+##### `SwanLabLogger.log_hyperparams`
+
+```python
+log_hyperparams(self, params: Dict[str, Any]) -> None
+```
+
+No docstring provided.
+
+##### `SwanLabLogger.finish`
+
+```python
+finish(self) -> None
+```
+
+No docstring provided.
+
+#### `TensorBoardXLogger`
+
+TensorBoardX logger implementation.
+
+**Parameters**
+
+- `log_dir` (`str`): Directory where event files will be written.
+- `comment` (`str, default=""`): Comment appended to the log directory name.
+- `**kwargs` (`dict`): Additional keyword arguments forwarded to
+  ``tensorboardX.SummaryWriter``.
+
+**Raises**
+
+- `ImportError`: If ``tensorboardX`` is not installed in the current environment.
+
+##### `TensorBoardXLogger.log_metrics`
+
+```python
+log_metrics(self, metrics: Dict[str, Any], step: Optional[int] = None) -> None
+```
+
+No docstring provided.
+
+##### `TensorBoardXLogger.log_hyperparams`
+
+```python
+log_hyperparams(self, params: Dict[str, Any]) -> None
+```
+
+No docstring provided.
+
+##### `TensorBoardXLogger.finish`
+
+```python
+finish(self) -> None
+```
+
+No docstring provided.
+
+## `data/`
+
+### `convert`
+
+Module: `torch_rechub.data.convert`
+
+#### `pa_array_to_tensor`
+
+```python
+pa_array_to_tensor(arr: pa.Array) -> torch.Tensor
+```
+
+Convert a PyArrow array to a PyTorch tensor.
+
+**Parameters**
+
+- `arr` (`pa.Array`): The given PyArrow array.
+
+**Returns**
+
+- `torch.Tensor` (`The result PyTorch tensor.`)
+
+**Raises**
+
+- `TypeError`: if the array type or the value type (when nested) is unsupported.
+- `ValueError`: if the nested array is ragged (unequal lengths of each row).
+
+### `dataset`
+
+Module: `torch_rechub.data.dataset`
+
+#### `ParquetIterableDataset`
+
+Stream Parquet data as PyTorch tensors.
+
+**Parameters**
+
+- `file_paths` (`list[FilePath]`): Paths to Parquet files.
+- `columns` (`list[str], optional`): Columns to select; if ``None``, read all columns.
+- `batch_size` (`int, default _DEFAULT_BATCH_SIZE`): Rows per streamed batch.
+
+**Notes**
+
+Reads lazily; no full Parquet load. Each worker gets a partition, builds its
+own PyArrow Dataset/Scanner, and yields dicts of column tensors batch by batch.
+
+**Examples**
+
+```python
+>>> ds = ParquetIterableDataset(
+...     ["/data/train1.parquet", "/data/train2.parquet"],
+...     columns=["x", "y", "label"],
+...     batch_size=1024,
+... )
+>>> loader = DataLoader(ds, batch_size=None)
+>>> for batch in loader:
+...     x, y, label = batch["x"], batch["y"], batch["label"]
+...     ...
+```
+
+## `models/`
+
+### `generative/`
+
+#### `hllm`
+
+Module: `torch_rechub.models.generative.hllm`
+
+##### `HLLMTransformerBlock`
+
+Single HLLM Transformer block with self-attention and FFN.
+
+This block is similar to HSTULayer but designed for HLLM which uses
+pre-computed item embeddings as input instead of learnable token embeddings.
+
+**Parameters**
+
+- `d_model` (`int`): Hidden dimension.
+- `n_heads` (`int`): Number of attention heads.
+- `dropout` (`float`): Dropout rate.
+
+###### `HLLMTransformerBlock.forward`
+
+```python
+forward(self, x, rel_pos_bias = None, padding_mask = None)
+```
+
+Forward pass.
+
+**Parameters**
+
+- `x` (`Tensor`): Input of shape (B, L, D).
+- `rel_pos_bias` (`Tensor, optional`): Relative position bias.
+
+**Returns**
+
+- `Tensor` (`Output of shape (B, L, D).`)
+
+##### `HLLMModel`
+
+HLLM: Hierarchical Large Language Model for Recommendation.
+
+This is a lightweight implementation of HLLM that uses pre-computed item
+embeddings as input. The original ByteDance HLLM uses end-to-end training
+with both Item LLM and User LLM, but this implementation focuses on the
+sequence encoder for resource efficiency. By default it is an HLLM-inspired
+baseline, not a pretrained User LLM or full end-to-end paper reproduction.
+
+Architecture:
+    - Item Embeddings: Pre-computed using LLM (offline, frozen)
+      Format: "{item_prompt}title: {title}description: {description}"
+      where item_prompt = "Compress the following sentence into embedding: "
+    - User LLM: Transformer blocks that model user sequences (trainable)
+    - Scoring Head: Dot product between user representation and item embeddings
+
+Reference:
+    ByteDance HLLM: https://github.com/bytedance/HLLM
+
+**Parameters**
+
+- `item_embeddings` (`Tensor or str`): Pre-computed item embeddings of shape
+  (vocab_size, d_model), or path to a .pt file containing embeddings.
+  Row ``i`` must correspond to vocab token ``i`` and row 0 is PAD.
+- `vocab_size` (`int`): Vocabulary size including PAD.
+- `d_model` (`int`): Hidden dimension. Should match item embedding dimension.
+  Default: 512. TinyLlama uses 2048, Baichuan2 uses 4096.
+- `n_heads` (`int`): Number of attention heads. Default: 8.
+- `n_layers` (`int`): Number of transformer blocks. Default: 4.
+- `max_seq_len` (`int`): Maximum sequence length. Default: 256.
+  Official uses MAX_ITEM_LIST_LENGTH=50.
+- `dropout` (`float`): Dropout rate. Default: 0.1.
+- `use_rel_pos_bias` (`bool`): Whether to use relative position bias. Default: True.
+- `use_time_embedding` (`bool`): Whether to use time embeddings. Default: True.
+- `num_time_buckets` (`int`): Number of time buckets. Default: 2048.
+- `time_bucket_fn` (`str`): Time bucketization function ('sqrt' or 'log'). Default: 'sqrt'.
+- `temperature` (`float`): Temperature for cos-sim logits. Default: 0.07
+  (matches official ByteDance HLLM logit_scale = log(1/0.07)).
+  item_embeddings and user representation are both L2-normalized,
+  so logits = cos(x, emb) / temperature, bounded in [-1/T, +1/T].
+  Loss functions should be configured with their own temperature=1.0
+  to avoid double scaling.
+- `user_model` (`nn.Module, optional`): Supplied pretrained causal base model,
+  e.g. AutoModel, returning last_hidden_state from inputs_embeds.
+  Its hidden size must match d_model. A causal-LM vocabulary head is
+  not needed. No checkpoint is downloaded by this class.
+- `project_items` (`bool`): Default False preserves the dimension check.
+  True allows a small trainable projection from cached LLM embeddings
+  to d_model; this is a resource-saving approximation, not paper HLLM.
+- `learn_temperature` (`bool`): Default False preserves fixed temperature.
+  True learns a logit scale clamped to [1, 100], like the reference.
+
+###### `HLLMModel.encode`
+
+```python
+encode(self, seq_tokens, time_diffs = None)
+```
+
+Encode history into states, masking PAD keys and PAD outputs.
+
+**Parameters**
+
+- `seq_tokens` (`Tensor`): Item token IDs of shape (B, L).
+- `time_diffs` (`Tensor, optional`): Time differences in seconds of shape (B, L).
+
+**Returns**
+
+- `Tensor` (`States of shape (B, L, d_model).`)
+
+###### `HLLMModel.score_items`
+
+```python
+score_items(self, states, item_ids = None, paired = False)
+```
+
+Cosine scores for all candidates, or one paired item per state.
+
+###### `HLLMModel.get_item_embeddings`
+
+```python
+get_item_embeddings(self, item_ids = None)
+```
+
+Normalized candidate vectors, including the optional projection.
+
+###### `HLLMModel.forward`
+
+```python
+forward(self, seq_tokens, time_diffs = None)
+```
+
+Preserve the full-vocabulary forward API.
+
+#### `hstu`
+
+Module: `torch_rechub.models.generative.hstu`
+
+##### `HSTUModel`
+
+HSTU: Hierarchical Sequential Transduction Units.
+
+Autoregressive generative recommender that stacks ``HSTUBlock`` layers to
+capture long-range dependencies and predict the next item. The layer
+internals are a dense teaching adaptation of HSTU (Eq. 2-4), not a
+parameter-identical port of Meta's jagged reference implementation:
+
+- Token embedding + absolute position embedding + (optional) time-bucket
+  embedding on the input side.
+- Each HSTU layer applies a single ``SiLU`` to the joint ``UVQK``
+  projection **before** splitting (Eq. 2), so all four streams go through
+  the non-linearity. LayerNorm has no affine parameters (eps=1e-6), and
+  the joint projection has no bias, matching the reference.
+- Like Meta's ``rel_bias`` path, attention uses unscaled QK and a
+  head-shared relative bias before ``SiLU(scores) / seq_len`` (Eq. 3).
+  This dense adaptation retains same-position time differences; Meta's
+  timestamp bias uses the next event time. Input preprocessing and layer
+  parameterization are not checkpoint-compatible with the reference.
+- Gated output ``LayerNorm(A V) * U`` projected by a single linear
+  ``f_2`` (Eq. 4); no concat-u/x bypass and no separate FFN.
+- External residual ``x + Layer(x)`` is applied around each layer in
+  :class:`HSTUBlock`.
+- Output projection is **tied** with the token embedding by default.
+
+**Parameters**
+
+- `vocab_size` (`int`): Vocabulary size (items incl. PAD=0).
+- `d_model` (`int, default=512`): Hidden dimension.
+- `n_heads` (`int, default=8`): Attention heads.
+- `n_layers` (`int, default=4`): Number of stacked HSTU layers.
+- `dqk` (`int, default=64`): Query/key dim per head.
+- `dv` (`int, default=64`): Value/u dim per head.
+- `max_seq_len` (`int, default=256`): Maximum sequence length. ``forward`` raises ``ValueError`` if input
+  ``seq_len`` exceeds this.
+- `dropout` (`float, default=0.1`): Dropout rate.
+- `use_time_embedding` (`bool, default=True`): Use time-difference embeddings.
+- `num_time_buckets` (`int, default=128`): Number of time buckets.
+- `time_bucket_fn` (`{'sqrt', 'log'}, default='sqrt'`): Bucketization function for time differences (in minutes). Shared by
+  the input-side time embedding and the per-layer ``rab^{p,t}``.
+- `time_bucket_divisor` (`float, default=1.0`): Divisor applied after ``sqrt``/``log`` so the bucket index range
+  actually utilizes ``[0, num_time_buckets - 1]``. Tune to your dataset's
+  time-difference distribution. Shared by the input-side time embedding
+  and the per-layer ``rab^{p,t}``.
+- `time_bucket_unit` (`{'minutes', 'seconds'}, default='minutes'`): Unit used before time bucketization. ``'seconds'`` matches Meta's
+  public HSTU MovieLens configs; ``'minutes'`` preserves the earlier
+  Torch-Rechub behavior.
+- `tie_embeddings` (`bool, default=True`): Tie the output projection weight to the token embedding weight.
+- `score_norm` (`{'none', 'l2'}, default='none'`): Optional normalization before item scoring. ``'l2'`` matches the
+  public HSTU configs' normalized dot-product retrieval setting.
+- `temperature` (`float, default=1.0`): Logit temperature applied after item scoring.
+- `use_output_bias` (`bool, default=True`): Whether to include an output bias in item logits.
+- `scale_input_embedding` (`bool, default=False`): Whether to multiply token embeddings by ``sqrt(d_model)`` before
+  adding positional/time embeddings.
+
+**Notes**
+
+``time_diffs`` semantics: per-position seconds delta from a single anchor
+(e.g. ``query_time - timestamps[i]``). This input contract differs from
+the reference's next-event timestamp bias.
+Adjacent-step ``t[i] - t[i-1]`` deltas also work, but the bucket
+distribution will be different; set ``time_bucket_divisor`` and
+``time_bucket_unit`` accordingly.
+``time_diffs=None`` falls back to all-zero deltas (no temporal signal).
+
+**Shape**
+
+- **Input**
+  - `x` (```(batch_size, seq_len)```)
+  - `time_diffs` (```(batch_size, seq_len)``, optional (seconds).`)
+- **Output**
+  - `logits` (```(batch_size, seq_len, vocab_size)```)
+
+###### `HSTUModel.encode`
+
+```python
+encode(self, x, time_diffs = None)
+```
+
+Encode a history into states without scoring the item vocabulary.
+
+**Parameters**
+
+- `x` (`Tensor`): Input token ids, shape ``(batch_size, seq_len)``. ``0``
+  is treated as PAD.
+- `time_diffs` (`Tensor, optional`): Time differences in seconds, shape
+  ``(batch_size, seq_len)``. If ``None`` and
+  ``use_time_embedding=True``, all-zero deltas are used (no
+  temporal signal).
+
+**Returns**
+
+- `Tensor` (`Sequence states, shape ``(batch_size, seq_len, d_model)``.`)
+
+###### `HSTUModel.score_items`
+
+```python
+score_items(self, states, item_ids = None, paired = False)
+```
+
+Score item IDs, or the full vocabulary when omitted.
+
+``paired=True`` scores one item per state for sampled positives.
+
+###### `HSTUModel.forward`
+
+```python
+forward(self, x, time_diffs = None)
+```
+
+Keep the original full-vocabulary logits interface.
+
+#### `rqvae`
+
+Module: `torch_rechub.models.generative.rqvae`
+
+##### `kmeans`
+
+```python
+kmeans(samples, num_clusters, num_iters = 10)
+```
+
+Perform K-Means clustering on input samples and return cluster centers.
+
+This function applies the scikit-learn implementation of K-Means
+to cluster the input samples and returns the resulting cluster
+centers as a PyTorch tensor on the original device.
+
+**Parameters**
+
+- `samples` (`torch.Tensor`): Input tensor of shape (N, D), where N is the number of samples
+  and D is the feature dimension.
+- `num_clusters` (`int`): The number of clusters to form.
+- `num_iters` (`int, optional (default=10)`): Maximum number of iterations of the K-Means algorithm.
+
+**Returns**
+
+- `tensor_centers` (`torch.Tensor`): A tensor of shape (num_clusters, D) containing the cluster
+  centers, located on the same device as the input samples.
+
+**Notes**
+
+This function converts the input tensor to a NumPy array and runs
+K-Means on the CPU using scikit-learn. Gradients are not preserved.
+
+##### `sinkhorn_algorithm`
+
+```python
+sinkhorn_algorithm(distances, epsilon, sinkhorn_iterations)
+```
+
+No docstring provided.
+
+##### `VectorQuantizer`
+
+VectorQuantizer: Single-stage vector quantization module.
+
+Quantizes input features using a learned codebook and optionally
+applies Sinkhorn-based soft assignment. Computes codebook and
+commitment losses for training.
+
+**Parameters**
+
+- `n_e` (`int`): Number of embeddings (codebook size).
+- `e_dim` (`int`): Dimensionality of each embedding vector.
+- `beta` (`float, default=0.25`): Weight for the commitment loss term.
+- `kmeans_init` (`bool, default=False`): Whether to initialize embeddings with K-Means.
+- `kmeans_iters` (`int, default=10`): Number of K-Means iterations for initialization.
+- `sk_epsilon` (`float, default=0.003`): Entropy regularization coefficient for Sinkhorn assignment.
+- `sk_iters` (`int, default=100`): Number of Sinkhorn iterations.
+
+**Shape**
+
+- **Input**
+  - `x` (`torch.Tensor of shape (batch_size, ..., e_dim)`)
+- **Output**
+  - `x_q` (`torch.Tensor of shape (batch_size, ..., e_dim)`)
+  - `loss` (`torch.Tensor, scalar quantization loss`)
+  - `indices` (`torch.Tensor of shape (batch_size, ...), codebook indices`)
+
+**Examples**
+
+```python
+>>> vq = VectorQuantizer(n_e=512, e_dim=64)
+>>> x = torch.randn(32, 10, 64)
+>>> x_q, loss, indices = vq(x)
+>>> x_q.shape
+```
+torch.Size([32, 10, 64])
+
+###### `VectorQuantizer.get_codebook`
+
+```python
+get_codebook(self)
+```
+
+Return the current codebook embeddings.
+
+**Returns**
+
+- `torch.Tensor`: A tensor of shape (n_e, e_dim) containing the embedding vectors.
+
+###### `VectorQuantizer.get_codebook_entry`
+
+```python
+get_codebook_entry(self, indices, shape = None)
+```
+
+Retrieve codebook entries corresponding to given indices.
+
+**Parameters**
+
+- `indices` (`torch.Tensor`): Tensor of indices selecting codebook entries.
+- `shape` (`tuple of int, optional`): Desired output shape after reshaping the retrieved embeddings.
+
+**Returns**
+
+- `torch.Tensor`: Quantized vectors corresponding to the provided indices.
+
+###### `VectorQuantizer.init_emb`
+
+```python
+init_emb(self, data)
+```
+
+Initialize the codebook embeddings using K-Means clustering.
+
+###### `VectorQuantizer.center_distance_for_constraint`
+
+```python
+center_distance_for_constraint(distances)
+```
+
+Center and normalize distance values for constrained optimization.
+
+###### `VectorQuantizer.forward`
+
+```python
+forward(self, x, use_sk = True)
+```
+
+Apply vector quantization to the input features.
+
+**Parameters**
+
+- `x` (`torch.Tensor`): Input tensor whose last dimension corresponds to the embedding
+  dimension.
+- `use_sk` (`bool, optional (default=True)`): Whether to use Sinkhorn-based soft assignment instead of
+  hard nearest-neighbor assignment.
+
+**Returns**
+
+- `x_q` (`torch.Tensor`): Quantized output tensor with the same shape as the input.
+- `loss` (`torch.Tensor`): Vector quantization loss consisting of codebook and commitment
+  terms.
+- `indices` (`torch.Tensor`): Indices of the selected codebook entries for each input vector.
+
+**Notes**
+
+During training, the codebook may be initialized using K-Means
+if it has not been initialized yet. Gradients are preserved using
+the straight-through estimator.
+
+##### `ResidualVectorQuantizer`
+
+ResidualVectorQuantizer: Multi-stage residual vector quantization.
+
+Applies a sequence of VectorQuantizer modules to progressively
+quantize the residuals of the input. Sums quantization losses
+across stages, as in TIGER. References:SoundStream: An End-to-End Neural Audio Codec
+https://arxiv.org/pdf/2107.03312.pdf
+
+**Parameters**
+
+- `n_e_list` (`list of int`): Number of embeddings for each residual quantization stage.
+- `e_dim` (`int`): Dimensionality of each embedding vector.
+- `sk_epsilons` (`list of float`): Entropy regularization coefficients for Sinkhorn assignment
+  at each stage.
+- `beta` (`float, default=0.25`): Weight for the commitment loss term.
+- `kmeans_init` (`bool, default=False`): Whether to initialize embeddings with K-Means.
+- `kmeans_iters` (`int, default=100`): Number of K-Means iterations for initialization.
+- `sk_iters` (`int, default=100`): Number of Sinkhorn iterations.
+
+**Shape**
+
+- **Input**
+  - `x` (`torch.Tensor of shape (batch_size, ..., e_dim)`)
+- **Output**
+  - `x_q` (`torch.Tensor of shape (batch_size, ..., e_dim)`)
+  - `quant_loss` (`torch.Tensor, scalar sum of quantization losses`)
+  - `all_indices` (`torch.Tensor of shape (batch_size, ..., num_quantizers)`)
+
+**Examples**
+
+```python
+>>> rvq = ResidualVectorQuantizer(n_e_list=[512, 512], e_dim=64, sk_epsilons=[0.003, 0.003])
+>>> x = torch.randn(32, 10, 64)
+>>> x_q, loss, indices = rvq(x)
+>>> x_q.shape
+```
+torch.Size([32, 10, 64])
+
+###### `ResidualVectorQuantizer.get_codebook`
+
+```python
+get_codebook(self)
+```
+
+Return the stacked codebooks from all residual quantizers.
+
+###### `ResidualVectorQuantizer.forward`
+
+```python
+forward(self, x, use_sk = True)
+```
+
+Apply residual vector quantization to the input features.
+
+**Parameters**
+
+- `x` (`torch.Tensor`): Input tensor whose last dimension corresponds to the embedding
+  dimension.
+- `use_sk` (`bool, optional (default=True)`): Whether to use Sinkhorn-based soft assignment for each
+  quantization stage.
+
+**Returns**
+
+- `x_q` (`torch.Tensor`): Quantized output obtained by summing the outputs of all
+  residual quantizers.
+- `quant_loss` (`torch.Tensor`): Sum of vector quantization losses across all stages.
+- `all_indices` (`torch.Tensor`): Tensor containing codebook indices from all quantizers,
+  stacked along the last dimension.
+
+**Notes**
+
+Each quantization stage operates on the residual from the
+previous stage, enabling progressive refinement of the
+quantized representation.
+
+##### `RQVAEModel`
+
+RQVAEModel: Residual Quantized Variational Autoencoder.
+
+Implements a VAE with a multi-stage residual vector quantizer
+(ResidualVectorQuantizer) for latent discretization.
+
+**Parameters**
+
+- `in_dim` (`int, default=768`): Input feature dimension.
+- `num_emb_list` (`list of int`): Number of embeddings for each residual quantization stage.
+- `e_dim` (`int, default=64`): Dimension of each embedding vector.
+- `layers` (`list of int`): Hidden layer sizes for the encoder/decoder MLP.
+- `dropout_prob` (`float, default=0.0`): Dropout probability applied to MLP layers.
+- `bn` (`bool, default=False`): Whether to use batch normalization in MLP layers.
+- `loss_type` (`str, default="mse"`): Reconstruction loss type, either "mse" or "l1".
+- `quant_loss_weight` (`float, default=1.0`): Weight for the vector quantization loss.
+- `beta` (`float, default=0.25`): Commitment loss weight in the vector quantizers.
+- `kmeans_init` (`bool, default=False`): Whether to initialize codebooks using K-Means.
+- `kmeans_iters` (`int, default=100`): Number of K-Means iterations for initialization.
+- `sk_epsilons` (`list of float`): Entropy regularization coefficients for Sinkhorn assignment.
+- `sk_iters` (`int, default=100`): Number of Sinkhorn iterations for each quantizer.
+
+**Shape**
+
+- **Input**
+  - `x` (`torch.Tensor of shape (batch_size, in_dim)`)
+- **Output**
+  - `out` (`torch.Tensor of shape (batch_size, in_dim)`)
+  - `rq_loss` (`torch.Tensor, scalar quantization loss`)
+  - `indices` (`torch.Tensor of shape (batch_size, num_quantizers)`)
+
+**Examples**
+
+```python
+>>> model = RQVAEModel(in_dim=768, num_emb_list=[512,512], e_dim=64, layers=[256,128])
+>>> x = torch.randn(32, 768)
+>>> out, rq_loss, indices = model(x)
+>>> out.shape
+```
+torch.Size([32, 768])
+
+###### `RQVAEModel.forward`
+
+```python
+forward(self, x, use_sk = True)
+```
+
+Forward pass.
+
+**Parameters**
+
+- `x` (`torch.Tensor`): Input feature tensor of shape
+  ``(batch_size, in_dim)``.
+- `use_sk` (`bool, optional`): Whether to use Sinkhorn-based soft
+  assignment in the residual vector quantizer. Default: ``True``.
+
+**Returns**
+
+- `out` (`torch.Tensor`): Reconstructed output tensor of shape
+  ``(batch_size, in_dim)``.
+- `rq_loss` (`torch.Tensor`): Scalar residual vector quantization loss.
+- `indices` (`torch.Tensor`): Codebook indices from all quantization
+  stages, shape ``(batch_size, num_quantizers)``.
+
+###### `RQVAEModel.get_indices`
+
+```python
+get_indices(self, xs, use_sk = False)
+```
+
+Obtain residual quantizer codebook indices for input features.
+
+**Parameters**
+
+- `xs` (`torch.Tensor`): Input tensor of shape (batch_size, in_dim)
+- `use_sk` (`bool, default=False`): Whether to use Sinkhorn-based soft assignment.
+
+**Returns**
+
+- `sids` (`torch.Tensor`)
+- `Codebook indices of shape (batch_size, num_quantizers)`
+
+###### `RQVAEModel.compute_loss`
+
+```python
+compute_loss(self, out, quant_loss, xs = None)
+```
+
+Compute total loss combining reconstruction and quantization losses.
+
+**Parameters**
+
+- `out` (`torch.Tensor`): Reconstructed output tensor, shape (batch_size, in_dim)
+- `quant_loss` (`torch.Tensor`): Vector quantization loss scalar
+- `xs` (`torch.Tensor`): Ground-truth input tensor, shape (batch_size, in_dim)
+
+**Returns**
+
+- `loss_total` (`torch.Tensor`): Combined reconstruction and quantization loss
+- `loss_recon` (`torch.Tensor`): Reconstruction loss only
+
+###### `RQVAEModel.generate_semantic_ids`
+
+```python
+generate_semantic_ids(self, data, data_loader, prefix = None, use_sk = False, device = 'cuda', item_ids = None)
+```
+
+Export row-aligned, unique semantic IDs using a collision suffix.
+
+The loader must visit every row exactly once in dataset order. Optional
+item_ids maps those rows to business IDs; otherwise keys are row indices.
+Re-export the complete catalog after changing RQ-VAE or catalog order.
+use_sk is retained for compatibility; export uses nearest codes and a collision suffix.
+
+#### `tiger`
+
+Module: `torch_rechub.models.generative.tiger`
+
+##### `TIGERModel`
+
+No docstring provided.
+
+###### `TIGERModel.set_hyper`
+
+```python
+set_hyper(self, temperature)
+```
+
+No docstring provided.
+
+###### `TIGERModel.build_tokenizer`
+
+```python
+build_tokenizer(tokens, model_max_length = 512)
+```
+
+Offline semantic-token vocabulary; no natural-language checkpoint.
+
+###### `TIGERModel.ranking_loss`
+
+```python
+ranking_loss(self, lm_logits, labels)
+```
+
+No docstring provided.
+
+###### `TIGERModel.forward`
+
+```python
+forward(self, input_ids = None, whole_word_ids = None, attention_mask = None, encoder_outputs = None, decoder_input_ids = None, decoder_attention_mask = None, cross_attn_head_mask = None, past_key_values = None, use_cache = None, labels = None, inputs_embeds = None, decoder_inputs_embeds = None, head_mask = None, decoder_head_mask = None, output_attentions = None, output_hidden_states = None, return_dict = None, reduce_loss = False, return_hidden_state = False, **kwargs)
+```
+
+
+
+### `matching/`
+
+#### `comirec`
+
+Module: `torch_rechub.models.matching.comirec`
+
+##### `ComirecSA`
+
+The match model mentioned in `Controllable Multi-Interest Framework for Recommendation` paper.
+It's a ComirecSA match model trained by global softmax loss on list-wise samples.
+Note in origin paper, it's without item dnn tower and train item embedding directly.
+
+**Parameters**
+
+- `user_features` (`list[Feature Class]`): training by the user tower module.
+- `history_features` (`list[Feature Class]`): training history
+- `item_features` (`list[Feature Class]`): training by the embedding table, it's the item id feature.
+- `neg_item_feature` (`list[Feature Class]`): training by the embedding table, it's the negative items id feature.
+- `temperature` (`float`): temperature factor for similarity score, default to 1.0.
+
+    interest_num （int): interest num
+
+###### `ComirecSA.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+###### `ComirecSA.user_tower`
+
+```python
+user_tower(self, x)
+```
+
+No docstring provided.
+
+###### `ComirecSA.item_tower`
+
+```python
+item_tower(self, x)
+```
+
+No docstring provided.
+
+###### `ComirecSA.gen_mask`
+
+```python
+gen_mask(self, x)
+```
+
+No docstring provided.
+
+##### `ComirecDR`
+
+The match model mentioned in `Controllable Multi-Interest Framework for Recommendation` paper.
+It's a ComirecDR match model trained by global softmax loss on list-wise samples.
+Note in origin paper, it's without item dnn tower and train item embedding directly.
+
+**Parameters**
+
+- `user_features` (`list[Feature Class]`): training by the user tower module.
+- `history_features` (`list[Feature Class]`): training history
+- `item_features` (`list[Feature Class]`): training by the embedding table, it's the item id feature.
+- `neg_item_feature` (`list[Feature Class]`): training by the embedding table, it's the negative items id feature.
+- `max_length` (`int`): max sequence length of input item sequence
+- `temperature` (`float`): temperature factor for similarity score, default to 1.0.
+
+    interest_num （int): interest num
+
+###### `ComirecDR.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+###### `ComirecDR.user_tower`
+
+```python
+user_tower(self, x)
+```
+
+No docstring provided.
+
+###### `ComirecDR.item_tower`
+
+```python
+item_tower(self, x)
+```
+
+No docstring provided.
+
+###### `ComirecDR.gen_mask`
+
+```python
+gen_mask(self, x)
+```
+
+No docstring provided.
+
+#### `dssm`
+
+Module: `torch_rechub.models.matching.dssm`
+
+##### `DSSM`
+
+Deep Structured Semantic Model
+
+**Parameters**
+
+- `user_features` (`list[Feature Class]`): training by the user tower module.
+- `item_features` (`list[Feature Class]`): training by the item tower module.
+- `temperature` (`float`): positive temperature for MatchTrainer's full-batch
+  in-batch cross entropy, default to 1.0. The point-wise forward path
+  continues to return sigmoid(cosine_similarity) without temperature scaling.
+- `user_params` (`dict`): the params of the User Tower module, keys include:`{"dims":list, "activation":str, "dropout":float, "output_layer":bool`}.
+- `item_params` (`dict`): the params of the Item Tower module, keys include:`{"dims":list, "activation":str, "dropout":float, "output_layer":bool`}.
+
+###### `DSSM.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+###### `DSSM.user_tower`
+
+```python
+user_tower(self, x)
+```
+
+No docstring provided.
+
+###### `DSSM.item_tower`
+
+```python
+item_tower(self, x)
+```
+
+No docstring provided.
+
+#### `dssm_facebook`
+
+Module: `torch_rechub.models.matching.dssm_facebook`
+
+##### `FaceBookDSSM`
+
+Embedding-based Retrieval in Facebook Search
+It's a DSSM match model trained by hinge loss on pair-wise samples.
+
+**Parameters**
+
+- `user_features` (`list[Feature Class]`): training by the user tower module.
+- `pos_item_features` (`list[Feature Class]`): negative sample features, training by the item tower module.
+- `neg_item_features` (`list[Feature Class]`): positive sample features, training by the item tower module.
+- `temperature` (`float`): temperature factor for similarity score, default to 1.0.
+- `user_params` (`dict`): the params of the User Tower module, keys include:`{"dims":list, "activation":str, "dropout":float, "output_layer":bool`}.
+- `item_params` (`dict`): the params of the Item Tower module, keys include:`{"dims":list, "activation":str, "dropout":float, "output_layer":bool`}.
+
+###### `FaceBookDSSM.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+###### `FaceBookDSSM.user_tower`
+
+```python
+user_tower(self, x)
+```
+
+No docstring provided.
+
+###### `FaceBookDSSM.item_tower`
+
+```python
+item_tower(self, x)
+```
+
+No docstring provided.
+
+#### `dssm_senet`
+
+Module: `torch_rechub.models.matching.dssm_senet`
+
+##### `DSSM`
+
+Deep Structured Semantic Model
+
+**Parameters**
+
+- `user_features` (`list[Feature Class]`): training by the user tower module.
+- `item_features` (`list[Feature Class]`): training by the item tower module.
+- `temperature` (`float`): temperature factor for similarity score, default to 1.0.
+- `user_params` (`dict`): the params of the User Tower module, keys include:`{"dims":list, "activation":str, "dropout":float, "output_layer":bool`}.
+- `item_params` (`dict`): the params of the Item Tower module, keys include:`{"dims":list, "activation":str, "dropout":float, "output_layer":bool`}.
+
+###### `DSSM.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+###### `DSSM.user_tower`
+
+```python
+user_tower(self, x)
+```
+
+No docstring provided.
+
+###### `DSSM.item_tower`
+
+```python
+item_tower(self, x)
+```
+
+No docstring provided.
+
+#### `gru4rec`
+
+Module: `torch_rechub.models.matching.gru4rec`
+
+##### `GRU4Rec`
+
+The match model mentioned in `Deep Neural Networks for YouTube Recommendations` paper.
+It's a DSSM match model trained by global softmax loss on list-wise samples.
+Note in origin paper, it's without item dnn tower and train item embedding directly.
+
+**Parameters**
+
+- `user_features` (`list[Feature Class]`): training by the user tower module.
+- `history_features` (`list[Feature Class]`): training history
+- `item_features` (`list[Feature Class]`): training by the embedding table, it's the item id feature.
+- `neg_item_feature` (`list[Feature Class]`): training by the embedding table, it's the negative items id feature.
+- `user_params` (`dict`): the params of the User Tower module, keys include:`{"dims":list, "activation":str, "dropout":float, "output_layer":bool`}.
+- `temperature` (`float`): temperature factor for similarity score, default to 1.0.
+
+###### `GRU4Rec.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+###### `GRU4Rec.user_tower`
+
+```python
+user_tower(self, x)
+```
+
+No docstring provided.
+
+###### `GRU4Rec.item_tower`
+
+```python
+item_tower(self, x)
+```
+
+No docstring provided.
+
+#### `mind`
+
+Module: `torch_rechub.models.matching.mind`
+
+##### `dynamic_interest_mask`
+
+```python
+dynamic_interest_mask(mask, interest_num)
+```
+
+Per-user active-interest mask following the MIND paper's heuristic.
+
+Sizes the number of interests by history length
+``K'_u = max(1, min(interest_num, floor(log2(|I_u|))))`` where ``|I_u|`` is
+each user's interacted-item count (``mask.sum(-1)``). This is MIND-specific
+and lives with the model, not in the shared ``CapsuleNetwork`` routing layer.
+
+**Parameters**
+
+- `mask` (`Tensor`): history mask ``(B, L)`` with 1 for real items, 0 for padding.
+- `interest_num` (`int`): upper bound ``K`` on the number of interests.
+
+**Returns**
+
+- `Tensor` (`boolean ``(B, interest_num)`` mask, ``True`` for the first`)
+- ```K'_u`` (active) interests of each user.`
+
+##### `MIND`
+
+The match model mentioned in `Multi-Interest Network with Dynamic Routing` paper.
+It's a ComirecDR match model trained by global softmax loss on list-wise samples.
+Note in origin paper, it's without item dnn tower and train item embedding directly.
+
+**Parameters**
+
+- `user_features` (`list[Feature Class]`): training by the user tower module.
+- `history_features` (`list[Feature Class]`): training history
+- `item_features` (`list[Feature Class]`): training by the embedding table, it's the item id feature.
+- `neg_item_feature` (`list[Feature Class]`): training by the embedding table, it's the negative items id feature.
+- `max_length` (`int`): max sequence length of input item sequence
+- `temperature` (`float`): temperature factor for similarity score, default to 1.0.
+- `dynamic_interest` (`bool`): if ``True``, size the active interests per user by the
+  paper's heuristic ``K'_u = max(1, min(interest_num, floor(log2(|I_u|))))``
+  instead of a fixed ``interest_num``. Defaults to ``False`` (unchanged behaviour).
+
+
+    interest_num （int): interest num (the upper bound ``K`` when ``dynamic_interest``).
+
+**Notes**
+
+    With ``dynamic_interest=True`` the user-tower inference embedding zeroes out
+    each user's inactive interests (rows ``>= K'_u`` are zero vectors). Downstream
+    retrieval/indexing should skip those zero rows; :meth:`active_interest_mask`
+    returns the boolean ``(B, interest_num)`` mask of the interests to keep.
+
+###### `MIND.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+###### `MIND.user_tower`
+
+```python
+user_tower(self, x, interest_mask = None)
+```
+
+No docstring provided.
+
+###### `MIND.active_interest_mask`
+
+```python
+active_interest_mask(self, x)
+```
+
+Per-user boolean mask ``(B, interest_num)`` of active interests.
+
+Returns ``None`` when ``dynamic_interest`` is off (all interests active).
+With ``dynamic_interest=True`` the inference user embedding zeroes the
+inactive interests; downstream retrieval can use this mask to drop them.
+
+###### `MIND.item_tower`
+
+```python
+item_tower(self, x)
+```
+
+No docstring provided.
+
+###### `MIND.gen_mask`
+
+```python
+gen_mask(self, x)
+```
+
+No docstring provided.
+
+#### `narm`
+
+Module: `torch_rechub.models.matching.narm`
+
+##### `NARM`
+
+No docstring provided.
+
+###### `NARM.user_tower`
+
+```python
+user_tower(self, x)
+```
+
+Compute user embedding for in-batch negative sampling.
+
+###### `NARM.item_tower`
+
+```python
+item_tower(self, x)
+```
+
+Compute item embedding for in-batch negative sampling.
+
+###### `NARM.forward`
+
+```python
+forward(self, input_dict)
+```
+
+No docstring provided.
+
+#### `sasrec`
+
+Module: `torch_rechub.models.matching.sasrec`
+
+##### `SASRec`
+
+SASRec: Self-Attentive Sequential Recommendation
+
+**Parameters**
+
+- `features` (`list`): the list of `Feature Class`. In sasrec, the features list needs to have three elements in order: user historical behavior sequence features, positive sample sequence, and negative sample sequence.
+- `max_len` (`The length of the sequence feature.`)
+- `num_blocks` (`The number of stacks of attention modules.`)
+- `num_heads` (`The number of heads in MultiheadAttention.`)
+- `item_feature` (`Optional item feature for in-batch negative sampling mode.`)
+
+###### `SASRec.seq_forward`
+
+```python
+seq_forward(self, x, embed_x_feature)
+```
+
+No docstring provided.
+
+###### `SASRec.user_tower`
+
+```python
+user_tower(self, x)
+```
+
+Compute user embedding for in-batch negative sampling.
+Takes the last valid position's output as user representation.
+
+###### `SASRec.item_tower`
+
+```python
+item_tower(self, x)
+```
+
+Compute item embedding for in-batch negative sampling.
+
+###### `SASRec.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+##### `PointWiseFeedForward`
+
+No docstring provided.
+
+###### `PointWiseFeedForward.forward`
+
+```python
+forward(self, inputs)
+```
+
+No docstring provided.
+
+#### `sine`
+
+Module: `torch_rechub.models.matching.sine`
+
+##### `SINE`
+
+The match model was proposed in `Sparse-Interest Network for Sequential Recommendation` paper.
+
+**Parameters**
+
+- `history_features` (`list[str]`): training history feature names, this is for indexing the historical sequences from input dictionary
+- `item_features` (`list[str]`): item feature names, this is for indexing the items from input dictionary
+- `neg_item_features` (`list[str]`): neg item feature names, this for indexing negative items from input dictionary
+- `num_items` (`int`): number of items in the data
+- `embedding_dim` (`int`): dimensionality of the embeddings
+- `hidden_dim` (`int`): dimensionality of the hidden layer in self attention modules
+- `num_concept` (`int`): number of concept, also called conceptual prototypes
+- `num_intention` (`int`): number of (user) specific intentions out of the concepts
+- `seq_max_len` (`int`): max sequence length of input item sequence
+- `num_heads` (`int`): number of attention heads in self attention modules, default to 1
+- `temperature` (`float`): temperature factor in the similarity measure, default to 1.0
+
+###### `SINE.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+###### `SINE.user_tower`
+
+```python
+user_tower(self, x)
+```
+
+No docstring provided.
+
+###### `SINE.item_tower`
+
+```python
+item_tower(self, x)
+```
+
+No docstring provided.
+
+###### `SINE.gen_mask`
+
+```python
+gen_mask(self, x)
+```
+
+No docstring provided.
+
+#### `stamp`
+
+Module: `torch_rechub.models.matching.stamp`
+
+##### `STAMP`
+
+No docstring provided.
+
+###### `STAMP.user_tower`
+
+```python
+user_tower(self, x)
+```
+
+Compute user embedding for in-batch negative sampling.
+
+###### `STAMP.item_tower`
+
+```python
+item_tower(self, x)
+```
+
+Compute item embedding for in-batch negative sampling.
+
+###### `STAMP.forward`
+
+```python
+forward(self, input_dict)
+```
+
+No docstring provided.
+
+#### `youtube_dnn`
+
+Module: `torch_rechub.models.matching.youtube_dnn`
+
+##### `YoutubeDNN`
+
+The match model mentioned in `Deep Neural Networks for YouTube Recommendations` paper.
+It's a DSSM match model trained by global softmax loss on list-wise samples.
+Note in origin paper, it's without item dnn tower and train item embedding directly.
+
+**Parameters**
+
+- `user_features` (`list[Feature Class]`): training by the user tower module.
+- `item_features` (`list[Feature Class]`): training by the embedding table, it's the item id feature.
+- `neg_item_feature` (`list[Feature Class]`): training by the embedding table, it's the negative items id feature.
+- `user_params` (`dict`): the params of the User Tower module, keys include:`{"dims":list, "activation":str, "dropout":float, "output_layer":bool`}.
+- `temperature` (`float`): temperature factor for similarity score, default to 1.0.
+
+###### `YoutubeDNN.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+###### `YoutubeDNN.user_tower`
+
+```python
+user_tower(self, x)
+```
+
+No docstring provided.
+
+###### `YoutubeDNN.item_tower`
+
+```python
+item_tower(self, x)
+```
+
+No docstring provided.
+
+#### `youtube_sbc`
+
+Module: `torch_rechub.models.matching.youtube_sbc`
+
+##### `YoutubeSBC`
+
+Sampling-Bias-Corrected Neural Modeling for Matching by Youtube.
+It's a DSSM match model trained by In-batch softmax loss on list-wise samples, and add sample debias module.
+
+**Parameters**
+
+- `user_features` (`list[Feature Class]`): training by the user tower module.
+- `item_features` (`list[Feature Class]`): training by the item tower module.
+- `sample_weight_feature` (`list[Feature Class]`): used for sampling bias corrected in training.
+- `user_params` (`dict`): the params of the User Tower module, keys include:`{"dims":list, "activation":str, "dropout":float, "output_layer":bool`}.
+- `item_params` (`dict`): the params of the Item Tower module, keys include:`{"dims":list, "activation":str, "dropout":float, "output_layer":bool`}.
+- `batch_size` (`int`): same as batch size of DataLoader, used in in-batch sampling
+- `n_neg` (`int`): the number of negative sample for every positive sample, default to 3. Note it's must smaller than batch_size.
+- `temperature` (`float`): temperature factor for similarity score, default to 1.0.
+
+###### `YoutubeSBC.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+###### `YoutubeSBC.correct_inbatch_logits`
+
+```python
+correct_inbatch_logits(self, scores, x)
+```
+
+Keep sampling-bias correction for both original and full-batch training.
+
+###### `YoutubeSBC.user_tower`
+
+```python
+user_tower(self, x)
+```
+
+No docstring provided.
+
+###### `YoutubeSBC.item_tower`
+
+```python
+item_tower(self, x)
+```
+
+No docstring provided.
+
+### `multi_task/`
+
+#### `aitm`
+
+Module: `torch_rechub.models.multi_task.aitm`
+
+##### `AITM`
+
+Adaptive Information Transfer Multi-task (AITM) framework.
+    all the task type must be binary classificatioon.
+
+**Parameters**
+
+- `features` (`list[Feature Class]`): training by the whole module.
+- `n_task` (`int`): the number of binary classificatioon task.
+- `bottom_params` (`dict`): the params of all the botwer expert module, keys include:`{"dims":list, "activation":str, "dropout":float}`.
+- `tower_params_list` (`list`): the list of tower params dict, the keys same as expert_params.
+
+###### `AITM.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+##### `AttentionLayer`
+
+attention for info tranfer
+
+**Parameters**
+
+- `dim` (`int`): attention dim
+
+**Shape**
+
+    Input: (batch_size, 2, dim)
+    Output: (batch_size, dim)
+
+###### `AttentionLayer.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+#### `esmm`
+
+Module: `torch_rechub.models.multi_task.esmm`
+
+##### `ESMM`
+
+Entire Space Multi-Task Model
+
+**Parameters**
+
+- `user_features` (`list`): the list of `Feature Class`, training by shared bottom and tower module. It means the user features.
+- `item_features` (`list`): the list of `Feature Class`, training by shared bottom and tower module. It means the item features.
+- `cvr_params` (`dict`): the params of the CVR Tower module, keys include:`{"dims":list, "activation":str, "dropout":float`}
+- `ctr_params` (`dict`): the params of the CTR Tower module, keys include:`{"dims":list, "activation":str, "dropout":float`}
+
+###### `ESMM.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+#### `mmoe`
+
+Module: `torch_rechub.models.multi_task.mmoe`
+
+##### `MMOE`
+
+Multi-gate Mixture-of-Experts model.
+
+**Parameters**
+
+- `features` (`list`): the list of `Feature Class`, training by the expert and tower module.
+- `task_types` (`list`): types of tasks, only support `["classfication", "regression"]`.
+- `n_expert` (`int`): the number of expert net.
+- `expert_params` (`dict`): the params of all the expert module, keys include:`{"dims":list, "activation":str, "dropout":float}.
+- `tower_params_list` (`list`): the list of tower params dict, the keys same as expert_params.
+
+###### `MMOE.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+#### `ple`
+
+Module: `torch_rechub.models.multi_task.ple`
+
+##### `PLE`
+
+Progressive Layered Extraction model.
+
+**Parameters**
+
+- `features` (`list`): the list of `Feature Class`, training by the expert and tower module.
+- `task_types` (`list`): types of tasks, only support `["classfication", "regression"]`.
+- `n_level` (`int`): the  number of CGC layer.
+- `n_expert_specific` (`int`): the number of task-specific expert net.
+- `n_expert_shared` (`int`): the number of task-shared expert net.
+- `expert_params` (`dict`): the params of all the expert module, keys include:`{"dims":list, "activation":str, "dropout":float}.
+- `tower_params_list` (`list`): the list of tower params dict, the keys same as expert_params.
+
+###### `PLE.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+##### `CGC`
+
+Customized Gate Control (CGC) Model mentioned in PLE paper.
+
+**Parameters**
+
+- `cur_level` (`int`): the current level of CGC in PLE.
+- `n_level` (`int`): the  number of CGC layer.
+- `n_task` (`int`): the number of tasks.
+- `n_expert_specific` (`int`): the number of task-specific expert net.
+- `n_expert_shared` (`int`): the number of task-shared expert net.
+- `input_dims` (`int`): the input dims of the xpert module in current CGC layer.
+- `expert_params` (`dict`): the params of all the expert module, keys include:`{"dims":list, "activation":str, "dropout":float}.
+
+###### `CGC.forward`
+
+```python
+forward(self, x_list)
+```
+
+No docstring provided.
+
+#### `shared_bottom`
+
+Module: `torch_rechub.models.multi_task.shared_bottom`
+
+##### `SharedBottom`
+
+Shared Bottom multi task model.
+
+**Parameters**
+
+- `features` (`list`): the list of `Feature Class`, training by the bottom and tower module.
+- `task_types` (`list`): types of tasks, only support `["classfication", "regression"]`.
+- `bottom_params` (`dict`): the params of the last MLP module, keys include:`{"dims":list, "activation":str, "dropout":float}, keep `{"output_layer":False}`.
+- `tower_params_list` (`list`): the list of tower params dict, the keys same as bottom_params.
+
+###### `SharedBottom.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+### `ranking/`
+
+#### `afm`
+
+Module: `torch_rechub.models.ranking.afm`
+
+##### `AFM`
+
+Attentional Factorization Machine Model
+
+**Parameters**
+
+- `fm_features` (`list`): the list of `Feature Class`, training by the fm part module.
+- `embed_dim` (`int`): the dimension of input embedding.
+- `t` (`int`): the size of the hidden layer in the attention network.
+
+###### `AFM.attention`
+
+```python
+attention(self, y_fm)
+```
+
+No docstring provided.
+
+###### `AFM.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+#### `autoint`
+
+Module: `torch_rechub.models.ranking.autoint`
+
+##### `AutoInt`
+
+AutoInt Model
+
+**Parameters**
+
+- `sparse_features` (`list`): the list of `SparseFeature` Class
+- `dense_features` (`list`): the list of `DenseFeature` Class
+- `num_layers` (`int`): number of interacting layers
+- `num_heads` (`int`): number of attention heads
+- `dropout` (`float`): dropout rate for attention
+- `mlp_params` (`dict`): parameters for MLP, keys: {"dims":list, "activation":str,
+  "dropout":float, "output_layer":bool"}
+
+###### `AutoInt.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+#### `bst`
+
+Module: `torch_rechub.models.ranking.bst`
+
+##### `BST`
+
+Behavior Sequence Transformer
+
+**Parameters**
+
+- `features` (`list`): the list of `Feature Class`. training by MLP. It means the user profile features and context features in origin paper, exclude history and target features.
+- `history_features` (`list`): the list of `Feature Class`,training by Transformer. It means the user behaviour sequence features, eg.item id sequence, shop id sequence.
+- `target_features` (`list`): the list of `Feature Class`, training by Transformer. It means the target feature which will execute target-attention with history feature.
+- `mlp_params` (`dict`): the params of the last MLP module, keys include:`{"dims":list, "activation":str, "dropout":float, "output_layer":bool`}.
+- `nhead` (`int`): the number of heads in the multi-head-attention models.
+- `dropout` (`float`): the dropout value in the multi-head-attention models.
+- `num_layers` (`Any`): the number of sub-encoder-layers in the encoder.
+- `max_seq_len` (`int`): maximum sequence length (history + 1 target). Used for positional encoding table size.
+
+###### `BST.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+#### `dcn`
+
+Module: `torch_rechub.models.ranking.dcn`
+
+##### `DCN`
+
+Deep & Cross Network
+
+**Parameters**
+
+- `features` (`list[Feature Class]`): training by the whole module.
+- `mlp_params` (`dict`): the params of the last MLP module, keys include:`{"dims":list, "activation":str, "dropout":float, "output_layer":bool`}
+
+###### `DCN.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+#### `dcn_v2`
+
+Module: `torch_rechub.models.ranking.dcn_v2`
+
+##### `DCNv2`
+
+Deep & Cross Network with a mixture of low-rank architecture
+
+**Parameters**
+
+- `features` (`list[Feature Class]`): training by the whole module.
+- `n_cross_layers` (`int`): the number of layers of feature intersection layers
+- `mlp_params` (`dict`): the params of the last MLP module, keys include:`{"dims":list, "activation":str, "dropout":float, "output_layer":bool`}
+- `use_low_rank_mixture` (`bool`): True, whether to use a mixture of low-rank architecture
+- `low_rank` (`int`): the rank size of low-rank matrices
+- `num_experts` (`int`): the number of expert networks
+
+###### `DCNv2.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+#### `deepffm`
+
+Module: `torch_rechub.models.ranking.deepffm`
+
+##### `DeepFFM`
+
+The DeepFFM model, mentioned on the `webpage
+<https://cs.nju.edu.cn/31/60/c1654a209248/page.htm>` which is the first
+work that introduces FFM model into neural CTR system. It is also described
+in the `FAT-DeepFFM paper <https://arxiv.org/abs/1905.06336>`.
+
+**Parameters**
+
+- `linear_features` (`list`): the list of `Feature Class`, fed to the linear module.
+- `cross_features` (`list`): the list of `Feature Class`, fed to the ffm module.
+- `embed_dim` (`int`): the dimensionality of categorical value embedding.
+- `mlp_params` (`dict`): the params of the last MLP module, keys include:`{"dims":list, "activation":str, "dropout":float, "output_layer":bool`}
+
+###### `DeepFFM.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+##### `FatDeepFFM`
+
+The FAT-DeepFFM model, mentioned in the `FAT-DeepFFM paper
+<https://arxiv.org/abs/1905.06336>`. It combines DeepFFM with
+Compose-Excitation Network (CENet) field attention mechanism
+to highlight the importance of second-order feature crosses.
+
+**Parameters**
+
+- `linear_features` (`list`): the list of `Feature Class`, fed to the linear module.
+- `cross_features` (`list`): the list of `Feature Class`, fed to the ffm module.
+- `embed_dim` (`int`): the dimensionality of categorical value embedding.
+- `reduction_ratio` (`int`): the between the dimensions of input layer and hidden layer of the CEN MLP module.
+- `mlp_params` (`dict`): the params of the last MLP module, keys include:`{"dims":list, "activation":str, "dropout":float, "output_layer":bool`}
+
+###### `FatDeepFFM.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+#### `deepfm`
+
+Module: `torch_rechub.models.ranking.deepfm`
+
+##### `DeepFM`
+
+Deep Factorization Machine Model
+
+**Parameters**
+
+- `deep_features` (`list`): the list of `Feature Class`, training by the deep part module.
+- `fm_features` (`list`): the list of `Feature Class`, training by the fm part module.
+- `mlp_params` (`dict`): the params of the last MLP module, keys include:`{"dims":list, "activation":str, "dropout":float, "output_layer":bool`}
+
+###### `DeepFM.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+#### `dien`
+
+Module: `torch_rechub.models.ranking.dien`
+
+##### `AUGRU_Cell`
+
+No docstring provided.
+
+###### `AUGRU_Cell.forward`
+
+```python
+forward(self, x, h_1, a)
+```
+
+No docstring provided.
+
+##### `AUGRU`
+
+No docstring provided.
+
+###### `AUGRU.forward`
+
+```python
+forward(self, x, item, mask = None)
+```
+
+No docstring provided.
+
+##### `DIEN`
+
+Deep Interest Evolution Network (AAAI 2019).
+
+**Parameters**
+
+- `features` (`list`): user profile / context features fed into the top MLP.
+- `history_features` (`list`): positive behaviour sequence features (SequenceFeature, pooling="concat").
+  Must set padding_idx=0 and shared_with=<target_feature_name> so the embedding table
+  is owned by the corresponding target feature.
+- `neg_history_features` (`list`): negative-sampled behaviour sequence features, one per history feature.
+  Must set padding_idx=0 and shared_with=<target_feature_name> (same root as history_features).
+  EmbeddingLayer only registers features with shared_with=None as root keys in embed_dict,
+  so shared_with must point to the target feature, NOT the history feature.
+- `target_features` (`list`): target item features used by the AUGRU attention.
+  Must set padding_idx=0 so the shared embedding table's row 0 is a true zero vector.
+- `mlp_params` (`dict`): params for the top MLP, e.g. {"dims": [256, 128]}.
+  activation is fixed to "dice" as in the paper.
+- `alpha` (`float`): weight of the auxiliary loss. Default 0.2.
+- `Returns` (`forward`): tuple(prediction: Tensor[B], aux_loss: Tensor[])
+
+**Notes**
+
+    - Sequences are padded with 0 (convention from generate_seq_feature).
+    - Samples with all-padding history keep zero hidden state throughout GRU and AUGRU.
+    - Auxiliary loss uses next-step positive/negative supervision (paper Eq.7), skipping padding positions.
+    - AUGRU attention is softmax-normalised over the full valid sequence (paper Eq.14-15).
+
+###### `DIEN.auxiliary`
+
+```python
+auxiliary(self, outs, pos_emb, neg_emb, mask = None)
+```
+
+No docstring provided.
+
+###### `DIEN.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+#### `din`
+
+Module: `torch_rechub.models.ranking.din`
+
+##### `DIN`
+
+Deep Interest Network
+
+**Parameters**
+
+- `features` (`list`): the list of `Feature Class`. training by MLP. It means the user profile features and context features in origin paper, exclude history and target features.
+- `history_features` (`list`): the list of `Feature Class`,training by ActivationUnit. It means the user behaviour sequence features, eg.item id sequence, shop id sequence.
+- `target_features` (`list`): the list of `Feature Class`, training by ActivationUnit. It means the target feature which will execute target-attention with history feature.
+- `mlp_params` (`dict`): the params of the last MLP module, keys include:`{"dims":list, "activation":str, "dropout":float, "output_layer":bool`}
+- `attention_mlp_params` (`dict`): the params of the ActivationUnit module, keys include:`{"dims":list, "activation":str, "dropout":float, "use_softmax":bool`}
+
+###### `DIN.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+##### `ActivationUnit`
+
+Activation Unit Layer mentioned in DIN paper, it is a Target Attention method.
+
+**Parameters**
+
+- `embed_dim` (`int`): the length of embedding vector.
+- `history` (`tensor`)
+
+**Shape**
+
+    - Input: `(batch_size, seq_length, emb_dim)`
+    - Output: `(batch_size, emb_dim)`
+
+###### `ActivationUnit.forward`
+
+```python
+forward(self, history, target, mask = None)
+```
+
+No docstring provided.
+
+#### `edcn`
+
+Module: `torch_rechub.models.ranking.edcn`
+
+##### `EDCN`
+
+Deep & Cross Network with a mixture of low-rank architecture
+
+**Parameters**
+
+- `features` (`list[Feature Class]`): training by the whole module.
+- `n_cross_layers` (`int`): the number of layers of feature intersection layers
+- `mlp_params` (`dict`): the params of the last MLP module, keys include:`{"dims":list, "activation":str, "dropout":float, "output_layer":bool`}
+- `bridge_type` (`str`): the type interaction function, in ["hadamard_product", "pointwise_addition", "concatenation", "attention_pooling"]
+- `use_regulation_module` (`bool`): True, whether to use regulation module
+- `temperature` (`int`): the temperature coefficient to control distribution
+
+###### `EDCN.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+##### `BridgeModule`
+
+No docstring provided.
+
+###### `BridgeModule.forward`
+
+```python
+forward(self, x, h)
+```
+
+No docstring provided.
+
+##### `RegulationModule`
+
+No docstring provided.
+
+###### `RegulationModule.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+#### `fibinet`
+
+Module: `torch_rechub.models.ranking.fibinet`
+
+##### `FiBiNet`
+
+**Parameters**
+
+- `features` (`list[Feature Class]`): training by the whole module.
+- `reduction_ratio` (`int`): Hidden layer reduction factor of SENET layer
+- `mlp_params` (`dict`): the params of the last MLP module, keys include:`{"dims":list, "activation":str, "dropout":float, "output_layer":bool`}
+- `bilinear_type` (`str`): the type bilinear interaction function, in ["field_all", "field_each", "field_interaction"], field_all means that all features share a W, field_each means that a feature field corresponds to a W_i, field_interaction means that a feature field intersection corresponds to a W_ij
+
+###### `FiBiNet.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+#### `widedeep`
+
+Module: `torch_rechub.models.ranking.widedeep`
+
+##### `WideDeep`
+
+Wide & Deep Learning model.
+
+**Parameters**
+
+- `wide_features` (`list`): the list of `Feature Class`, training by the wide part module.
+- `deep_features` (`list`): the list of `Feature Class`, training by the deep part module.
+- `mlp_params` (`dict`): the params of the last MLP module, keys include:`{"dims":list, "activation":str, "dropout":float, "output_layer":bool`}
+
+###### `WideDeep.forward`
+
+```python
+forward(self, x)
+```
+
+No docstring provided.
+
+## `serving/`
+
+### `annoy`
+
+Module: `torch_rechub.serving.annoy`
+
+#### `AnnoyBuilder`
+
+ANNOY-based implementation of ``BaseBuilder``.
+
+##### `AnnoyBuilder.from_embeddings`
+
+```python
+from_embeddings(self, embeddings: torch.Tensor) -> ty.Generator['AnnoyIndexer', None, None]
+```
+
+Adhere to ``BaseBuilder.from_embeddings``.
+
+##### `AnnoyBuilder.from_index_file`
+
+```python
+from_index_file(self, index_file: FilePath) -> ty.Generator['AnnoyIndexer', None, None]
+```
+
+Adhere to ``BaseBuilder.from_index_file``.
+
+#### `AnnoyIndexer`
+
+ANNOY-based implementation of ``BaseIndexer``.
+
+##### `AnnoyIndexer.query`
+
+```python
+query(self, embeddings: torch.Tensor, top_k: int) -> tuple[torch.Tensor, torch.Tensor]
+```
+
+Adhere to ``BaseIndexer.query``.
+
+##### `AnnoyIndexer.save`
+
+```python
+save(self, file_path: FilePath) -> None
+```
+
+Adhere to ``BaseIndexer.save``.
+
+### `base`
+
+Module: `torch_rechub.serving.base`
+
+#### `BaseBuilder`
+
+Abstract base class for vector index construction.
+
+A builder owns all build-time configuration and produces a ``BaseIndexer`` through a
+context-managed build operation.
+
+**Examples**
+
+```python
+>>> builder = BaseBuilder(...)
+>>> embeddings = torch.randn(1000, 128)
+>>> with builder.from_embeddings(embeddings) as indexer:
+...     ids, scores = indexer.query(embeddings[:2], top_k=5)
+...     indexer.save("index.bin")
+>>> with builder.from_index_file("index.bin") as indexer:
+...     ids, scores = indexer.query(embeddings[:2], top_k=5)
+```
+
+##### `BaseBuilder.from_embeddings`
+
+```python
+from_embeddings(self, embeddings: torch.Tensor) -> ty.ContextManager['BaseIndexer']
+```
+
+Build a vector index from the embeddings.
+
+**Parameters**
+
+- `embeddings` (`torch.Tensor`): A 2D tensor (n, d) containing embedding vectors to build a new index.
+
+**Returns**
+
+- `ContextManager[BaseIndexer]`: A context manager that yields a fully initialized ``BaseIndexer``.
+
+##### `BaseBuilder.from_index_file`
+
+```python
+from_index_file(self, index_file: FilePath) -> ty.ContextManager['BaseIndexer']
+```
+
+Build a vector index from the index file.
+
+**Parameters**
+
+- `index_file` (`FilePath`): Path to a serialized index on disk to be loaded.
+
+**Returns**
+
+- `ContextManager[BaseIndexer]`: A context manager that yields a fully initialized ``BaseIndexer``.
+
+#### `BaseIndexer`
+
+Abstract base class for vector indexers in the retrieval stage.
+
+##### `BaseIndexer.query`
+
+```python
+query(self, embeddings: torch.Tensor, top_k: int) -> tuple[torch.Tensor, torch.Tensor]
+```
+
+Query the vector index.
+
+**Parameters**
+
+- `embeddings` (`torch.Tensor`): A 2D tensor (n, d) containing embedding vectors to query the index.
+- `top_k` (`int`): The number of nearest items to retrieve for each vector.
+
+**Returns**
+
+- `torch.Tensor`: A 2D tensor of shape (n, top_k), containing the retrieved nearest neighbor
+  IDs for each vector, ordered by descending relevance.
+- `torch.Tensor`: A 2D tensor of shape (n, top_k), containing the relevance distances of the
+  nearest neighbors for each vector.
+
+##### `BaseIndexer.save`
+
+```python
+save(self, file_path: FilePath) -> None
+```
+
+Persist the index to local disk.
+
+**Parameters**
+
+- `file_path` (`FilePath`): Destination path where the index will be saved.
+
+### `faiss`
+
+Module: `torch_rechub.serving.faiss`
+
+#### `FaissBuilder`
+
+Implement ``BaseBuilder`` for FAISS vector index construction.
+
+##### `FaissBuilder.from_embeddings`
+
+```python
+from_embeddings(self, embeddings: torch.Tensor) -> ty.Generator['FaissIndexer', None, None]
+```
+
+Adhere to ``BaseBuilder.from_embeddings``.
+
+##### `FaissBuilder.from_index_file`
+
+```python
+from_index_file(self, index_file: FilePath) -> ty.Generator['FaissIndexer', None, None]
+```
+
+Adhere to ``BaseBuilder.from_index_file``.
+
+#### `FaissIndexer`
+
+FAISS-based implementation of ``BaseIndexer``.
+
+##### `FaissIndexer.query`
+
+```python
+query(self, embeddings: torch.Tensor, top_k: int) -> tuple[torch.Tensor, torch.Tensor]
+```
+
+Adhere to ``BaseIndexer.query``.
+
+##### `FaissIndexer.save`
+
+```python
+save(self, file_path: FilePath) -> None
+```
+
+Adhere to ``BaseIndexer.save``.
+
+### `milvus`
+
+Module: `torch_rechub.serving.milvus`
+
+#### `MilvusBuilder`
+
+Implement ``BaseBuilder`` for Milvus vector index construction.
+
+##### `MilvusBuilder.from_embeddings`
+
+```python
+from_embeddings(self, embeddings: torch.Tensor) -> ty.Generator['MilvusIndexer', None, None]
+```
+
+Adhere to ``BaseBuilder.from_embeddings``.
+
+##### `MilvusBuilder.from_index_file`
+
+```python
+from_index_file(self, index_file: FilePath) -> ty.Generator['MilvusIndexer', None, None]
+```
+
+Adhere to ``BaseBuilder.from_index_file``.
+
+#### `MilvusIndexer`
+
+Milvus-based implementation of ``BaseIndexer``.
+
+##### `MilvusIndexer.query`
+
+```python
+query(self, embeddings: torch.Tensor, top_k: int) -> tuple[torch.Tensor, torch.Tensor]
+```
+
+Adhere to ``BaseIndexer.query``.
+
+##### `MilvusIndexer.save`
+
+```python
+save(self, file_path: FilePath) -> None
+```
+
+Adhere to ``BaseIndexer.save``.
+
+## `trainers/`
+
+### `ctr_trainer`
+
+Module: `torch_rechub.trainers.ctr_trainer`
+
+#### `CTRTrainer`
+
+A general trainer for single task learning.
+
+**Parameters**
+
+- `model` (`nn.Module`): any single-task ranking model.
+- `optimizer_fn` (`torch.optim`): optimizer function of pytorch (default = `torch.optim.Adam`).
+- `optimizer_params` (`dict`): parameters of optimizer_fn.
+- `scheduler_fn` (`torch.optim.lr_scheduler`): optional scheduler called with step() once per epoch, e.g. StepLR.
+- `scheduler_params` (`dict`): parameters of optimizer scheduler_fn.
+- `n_epoch` (`int`): epoch number of training.
+- `earlystop_patience` (`int`): how long to wait after last time validation auc improved (default=10).
+- `device` (`str`): `"cpu"` or `"cuda:0"`
+- `gpus` (`list`): id of multi gpu (default=[]). If the length >=1, then the model will wrapped by nn.DataParallel.
+- `loss_mode` (`bool`): whether the model returns only prediction or prediction with extra loss
+  (`True`: `model(x_dict) -> y_pred`, `False`: `model(x_dict) -> (y_pred, other_loss)`).
+- `model_path` (`str`): the path you want to save the model (default="./"). Note only save the best weight in the validation data.
+- `embedding_l1` (`float`): L1 regularization coefficient for embedding parameters (default=0.0).
+- `embedding_l2` (`float`): L2 regularization coefficient for embedding parameters (default=0.0).
+- `dense_l1` (`float`): L1 regularization coefficient for dense parameters (default=0.0).
+- `dense_l2` (`float`): L2 regularization coefficient for dense parameters (default=0.0).
+- `in_batch_neg` (`bool`): construct negative user-item pairs from positive rows in the batch.
+  Defaults to False, preserving the original supervised BCE training.
+- `item_features` (`list`): item column names or Feature objects to swap together.
+  User, history and context columns remain attached to their original row.
+- `in_batch_neg_ratio` (`int`): negatives per positive, default=1. None uses all other rows.
+- `sampler_seed` (`int`): optional seed for reproducible in-batch sampling.
+
+##### `CTRTrainer.train_one_epoch`
+
+```python
+train_one_epoch(self, data_loader, log_interval = 10)
+```
+
+Train one epoch; log_interval is a positive integer, defaulting to 10.
+
+##### `CTRTrainer.fit`
+
+```python
+fit(self, train_dataloader, val_dataloader = None, log_interval = 10)
+```
+
+Train with progress updates every log_interval trained batches.
+
+Use a positive integer for log_interval (default: 10).
+Set log_interval=1 to show each batch's loss and learning rate.
+
+##### `CTRTrainer.evaluate`
+
+```python
+evaluate(self, model, data_loader)
+```
+
+No docstring provided.
+
+##### `CTRTrainer.predict`
+
+```python
+predict(self, model, data_loader)
+```
+
+No docstring provided.
+
+##### `CTRTrainer.export_onnx`
+
+```python
+export_onnx(self, output_path, dummy_input = None, batch_size = 2, seq_length = 10, opset_version = 14, dynamic_batch = True, device = None, verbose = False, onnx_export_kwargs = None)
+```
+
+Export the trained model to ONNX format.
+
+This method exports the ranking model (e.g., DeepFM, WideDeep, DCN) to ONNX format
+for deployment. The export is non-invasive and does not modify the model code.
+
+**Parameters**
+
+- `output_path` (`str`): Path to save the ONNX model file.
+- `dummy_input` (`dict, optional`): Example input dict {feature_name: tensor}.
+  If not provided, dummy inputs will be generated automatically.
+- `batch_size` (`int`): Batch size for auto-generated dummy input (default: 2).
+- `seq_length` (`int`): Sequence length for SequenceFeature (default: 10).
+- `opset_version` (`int`): ONNX opset version (default: 14).
+- `dynamic_batch` (`bool`): Enable dynamic batch size (default: True).
+- `device` (`str, optional`): Device for export ('cpu', 'cuda', etc.).
+  If None, defaults to 'cpu' for maximum compatibility.
+- `verbose` (`bool`): Print export details (default: False).
+- `onnx_export_kwargs` (`dict, optional`): Extra kwargs forwarded to ``torch.onnx.export``.
+  The exporter tries the dynamo path first and falls back to the
+  legacy exporter automatically. Pass ``{"dynamo": False}`` here
+  to force legacy export when needed.
+
+**Returns**
+
+- `bool` (`True if export succeeded, False otherwise.`)
+
+**Examples**
+
+```python
+>>> trainer = CTRTrainer(model, ...)
+>>> trainer.fit(train_dl, val_dl)
+>>> trainer.export_onnx("deepfm.onnx")
+
+>>> # With custom dummy input
+>>> dummy = {"user_id": torch.tensor([1, 2]), "item_id": torch.tensor([10, 20])}
+>>> trainer.export_onnx("model.onnx", dummy_input=dummy)
+
+>>> # Export on specific device
+>>> trainer.export_onnx("model.onnx", device="cpu")
+```
+
+##### `CTRTrainer.visualization`
+
+```python
+visualization(self, input_data = None, batch_size = 2, seq_length = 10, depth = 3, show_shapes = True, expand_nested = True, save_path = None, graph_name = 'model', device = None, dpi = 300, **kwargs)
+```
+
+Draw the model; see utils.visualization.visualize_model for options.
+
+Inputs are generated from model features unless input_data is provided.
+Example: trainer.visualization(save_path="model.png", depth=3).
+
+### `match_trainer`
+
+Module: `torch_rechub.trainers.match_trainer`
+
+#### `MatchTrainer`
+
+A general trainer for Matching/Retrieval
+
+**Parameters**
+
+- `model` (`nn.Module`): any matching model with user_tower/item_tower methods.
+- `mode` (`int, optional`): the training mode, `{0:point-wise, 1:pair-wise, 2:list-wise}`. Defaults to 0.
+- `optimizer_fn` (`torch.optim`): optimizer function of pytorch (default = `torch.optim.Adam`).
+- `optimizer_params` (`dict`): parameters of optimizer_fn.
+- `scheduler_fn` (`torch.optim.lr_scheduler`): optional scheduler called with step() once per epoch, e.g. StepLR.
+- `scheduler_params` (`dict`): parameters of optimizer scheduler_fn.
+- `n_epoch` (`int`): epoch number of training.
+- `earlystop_patience` (`int`): how long to wait after last time validation auc improved (default=10).
+- `device` (`str`): `"cpu"` or `"cuda:0"`.
+- `gpus` (`list`): legacy GPU ID list for training without in-batch negatives.
+- `model_path` (`str`): the path you want to save the model (default="./"). Note only save the best weight in the validation data.
+- `in_batch_neg` (`bool`): train on positive-only pairs on a single device using other items in the batch
+  as negatives. The trainer temporarily uses the model's mode='in_batch'.
+  With mode=0 or 2 and default sampling options, use full-batch cross entropy
+  on tower embeddings using the model's own normalization, scaled by
+  model.temperature (default=1.0).
+  Paired-data labels are placeholders; session next-item labels provide target IDs.
+  Validation AUC still requires binary labels.
+  Other rows are treated as negatives, including repeated item IDs.
+- `in_batch_neg_ratio` (`int`): number of negatives to draw from the batch per positive sample when in_batch_neg is True.
+- `hard_negative` (`bool`): whether to choose hardest negatives within batch (top-k by score) instead of uniform random.
+- `sampler_seed` (`int`): optional random seed for in-batch sampler to ease reproducibility/testing.
+
+##### `MatchTrainer.train_one_epoch`
+
+```python
+train_one_epoch(self, data_loader, log_interval = 10)
+```
+
+Train one epoch; log_interval is a positive integer, defaulting to 10.
+
+##### `MatchTrainer.fit`
+
+```python
+fit(self, train_dataloader, val_dataloader = None, log_interval = 10)
+```
+
+Train with progress updates every log_interval trained batches.
+
+Use a positive integer for log_interval (default: 10).
+Set log_interval=1 to show each batch's loss and learning rate.
+
+##### `MatchTrainer.evaluate`
+
+```python
+evaluate(self, model, data_loader)
+```
+
+No docstring provided.
+
+##### `MatchTrainer.predict`
+
+```python
+predict(self, model, data_loader)
+```
+
+No docstring provided.
+
+##### `MatchTrainer.inference_embedding`
+
+```python
+inference_embedding(self, model, mode, data_loader, model_path)
+```
+
+No docstring provided.
+
+##### `MatchTrainer.export_onnx`
+
+```python
+export_onnx(self, output_path, mode = None, dummy_input = None, batch_size = 2, seq_length = 10, opset_version = 14, dynamic_batch = True, device = None, verbose = False, onnx_export_kwargs = None)
+```
+
+Export the trained matching model to ONNX format.
+
+This method exports matching/retrieval models (e.g., DSSM, YoutubeDNN, MIND)
+to ONNX format. For dual-tower models, you can export user tower and item
+tower separately for efficient online serving.
+
+**Parameters**
+
+- `output_path` (`str`): Path to save the ONNX model file.
+- `mode` (`str, optional`): Export mode for dual-tower models:
+  - "user": Export only the user tower (for user embedding inference)
+  - "item": Export only the item tower (for item embedding inference)
+  - None: Export the full model's original scoring output (default).
+- `dummy_input` (`dict, optional`): Example input dict {feature_name: tensor}.
+  If not provided, dummy inputs will be generated automatically.
+- `batch_size` (`int`): Batch size for auto-generated dummy input (default: 2).
+- `seq_length` (`int`): Sequence length for SequenceFeature (default: 10).
+- `opset_version` (`int`): ONNX opset version (default: 14).
+- `dynamic_batch` (`bool`): Enable dynamic batch size (default: True).
+- `device` (`str, optional`): Device for export ('cpu', 'cuda', etc.).
+  If None, defaults to 'cpu' for maximum compatibility.
+- `verbose` (`bool`): Print export details (default: False).
+- `onnx_export_kwargs` (`dict, optional`): Extra kwargs forwarded to ``torch.onnx.export``.
+  The exporter tries the dynamo path first and falls back to the
+  legacy exporter automatically. Pass ``{"dynamo": False}`` here
+  to force legacy export when needed.
+
+**Returns**
+
+- `bool` (`True if export succeeded, False otherwise.`)
+
+**Examples**
+
+```python
+>>> trainer = MatchTrainer(dssm_model, mode=0, ...)
+>>> trainer.fit(train_dl)
+
+>>> # Export user tower for user embedding inference
+>>> trainer.export_onnx("user_tower.onnx", mode="user")
+
+>>> # Export item tower for item embedding inference
+>>> trainer.export_onnx("item_tower.onnx", mode="item")
+
+>>> # Export full model (for online similarity computation)
+>>> trainer.export_onnx("full_model.onnx")
+
+>>> # Export on specific device
+>>> trainer.export_onnx("user_tower.onnx", mode="user", device="cpu")
+```
+
+##### `MatchTrainer.visualization`
+
+```python
+visualization(self, input_data = None, batch_size = 2, seq_length = 10, depth = 3, show_shapes = True, expand_nested = True, save_path = None, graph_name = 'model', device = None, dpi = 300, **kwargs)
+```
+
+Draw the model; see utils.visualization.visualize_model for options.
+
+Inputs are generated from model features unless input_data is provided.
+Example: trainer.visualization(save_path="model.png", depth=3).
+
+### `mtl_trainer`
+
+Module: `torch_rechub.trainers.mtl_trainer`
+
+#### `MTLTrainer`
+
+A trainer for multi task learning.
+
+**Parameters**
+
+- `model` (`nn.Module`): any multi task learning model.
+- `task_types` (`list`): types of tasks, only support ["classfication", "regression"].
+- `optimizer_fn` (`torch.optim`): optimizer function of pytorch (default = `torch.optim.Adam`).
+- `optimizer_params` (`dict`): parameters of optimizer_fn.
+- `scheduler_fn` (`torch.optim.lr_scheduler`): optional scheduler called with step() once per epoch, e.g. StepLR.
+- `scheduler_params` (`dict`): parameters of optimizer scheduler_fn.
+- `adaptive_params` (`dict`): parameters of adaptive loss weight method. Now only support `{"method" : "uwl"}`.
+- `n_epoch` (`int`): epoch number of training.
+- `earlystop_taskid` (`int`): task id of earlystop metrics relies between multi task (default = 0).
+- `earlystop_patience` (`int`): how long to wait after the validation metric last improved (default = 10).
+- `device` (`str`): `"cpu"` or `"cuda:0"`
+- `gpus` (`list`): id of multi gpu (default=[]). If the length >=1, then the model will wrapped by nn.DataParallel.
+- `model_path` (`str`): the path you want to save the model (default="./"). Note only save the best weight in the validation data.
+- `earlystop_mode` (`str`): ``"max"`` when a larger validation score is better,
+  or ``"min"`` when a smaller score is better (default = ``"max"``).
+
+##### `MTLTrainer.train_one_epoch`
+
+```python
+train_one_epoch(self, data_loader, log_interval = 10)
+```
+
+Train one epoch; log_interval is a positive integer, defaulting to 10.
+
+##### `MTLTrainer.fit`
+
+```python
+fit(self, train_dataloader, val_dataloader, mode = 'base', seed = 0, log_interval = 10)
+```
+
+Train with progress updates every log_interval batches.
+
+Use a positive integer for log_interval (default: 10).
+Set log_interval=1 to show each batch's task losses and learning rate.
+
+##### `MTLTrainer.evaluate`
+
+```python
+evaluate(self, model, data_loader)
+```
+
+No docstring provided.
+
+##### `MTLTrainer.predict`
+
+```python
+predict(self, model, data_loader)
+```
+
+No docstring provided.
+
+##### `MTLTrainer.export_onnx`
+
+```python
+export_onnx(self, output_path, dummy_input = None, batch_size = 2, seq_length = 10, opset_version = 14, dynamic_batch = True, device = None, verbose = False, onnx_export_kwargs = None)
+```
+
+Export the trained multi-task model to ONNX format.
+
+This method exports multi-task learning models (e.g., MMOE, PLE, ESMM, SharedBottom)
+to ONNX format for deployment. The exported model will have multiple outputs
+corresponding to each task.
+
+**Notes**
+
+    The ONNX model will output a tensor of shape [batch_size, n_task] where
+    n_task is the number of tasks in the multi-task model.
+
+**Parameters**
+
+- `output_path` (`str`): Path to save the ONNX model file.
+- `dummy_input` (`dict, optional`): Example input dict {feature_name: tensor}.
+  If not provided, dummy inputs will be generated automatically.
+- `batch_size` (`int`): Batch size for auto-generated dummy input (default: 2).
+- `seq_length` (`int`): Sequence length for SequenceFeature (default: 10).
+- `opset_version` (`int`): ONNX opset version (default: 14).
+- `dynamic_batch` (`bool`): Enable dynamic batch size (default: True).
+- `device` (`str, optional`): Device for export ('cpu', 'cuda', etc.).
+  If None, defaults to 'cpu' for maximum compatibility.
+- `verbose` (`bool`): Print export details (default: False).
+- `onnx_export_kwargs` (`dict, optional`): Extra kwargs forwarded to ``torch.onnx.export``.
+  The exporter tries the dynamo path first and falls back to the
+  legacy exporter automatically. Pass ``{"dynamo": False}`` here
+  to force legacy export when needed.
+
+**Returns**
+
+- `bool` (`True if export succeeded, False otherwise.`)
+
+**Examples**
+
+```python
+>>> trainer = MTLTrainer(mmoe_model, task_types=["classification", "classification"], ...)
+>>> trainer.fit(train_dl, val_dl)
+>>> trainer.export_onnx("mmoe.onnx")
+
+>>> # Export on specific device
+>>> trainer.export_onnx("mmoe.onnx", device="cpu")
+```
+
+##### `MTLTrainer.visualization`
+
+```python
+visualization(self, input_data = None, batch_size = 2, seq_length = 10, depth = 3, show_shapes = True, expand_nested = True, save_path = None, graph_name = 'model', device = None, dpi = 300, **kwargs)
+```
+
+Draw the model; see utils.visualization.visualize_model for options.
+
+Inputs are generated from model features unless input_data is provided.
+Example: trainer.visualization(save_path="model.png", depth=3).
+
+### `rqvae_trainer`
+
+Module: `torch_rechub.trainers.rqvae_trainer`
+
+#### `Trainer`
+
+Training utility class for PyTorch models.
+
+Handles the full training loop including optimization, evaluation,
+checkpointing, and logging.
+
+**Parameters**
+
+- `model` (`torch.nn.Module`): Model to be trained.
+- `optimizer_fn` (`callable, default=torch.optim.Adam`): Optimizer constructor.
+- `optimizer_params` (`dict, optional`): Parameters passed to the optimizer.
+- `scheduler_fn` (`callable, optional`): Learning rate scheduler constructor.
+- `scheduler_params` (`dict, optional`): Parameters passed to the scheduler.
+- `n_epoch` (`int, default=10`): Number of training epochs.
+- `device` (`str, default='cpu'`): Device used for training.
+- `model_path` (`str, default='./'`): Directory to save model checkpoints.
+- `model_logger` (`object or list, optional`): Logger instance(s) used for recording metrics.
+- `eval_step` (`int, default=50`): Evaluation interval measured in epochs.
+
+**Attributes**
+
+- `best_loss` (`float`): Best training loss observed so far.
+- `best_collision_rate` (`float`): Best collision rate observed during evaluation.
+
+##### `Trainer.train_one_epoch`
+
+```python
+train_one_epoch(self, data_loader)
+```
+
+Train the model for a single epoch.
+
+**Parameters**
+
+- `data_loader` (`torch.utils.data.DataLoader`): DataLoader providing training batches.
+
+**Returns**
+
+- `total_loss` (`float`): Sum of total training loss over the epoch.
+- `total_recon_loss` (`float`): Sum of reconstruction loss over the epoch.
+
+##### `Trainer.evaluate`
+
+```python
+evaluate(self, data_loader)
+```
+
+Evaluate the model by computing collision rate.
+
+**Parameters**
+
+- `data_loader` (`torch.utils.data.DataLoader`): DataLoader providing evaluation data.
+
+**Returns**
+
+- `collision_rate` (`float`): Ratio of duplicate semantic codes among all samples.
+
+##### `Trainer.fit`
+
+```python
+fit(self, train_dataloader)
+```
+
+Run the full training procedure.
+
+Performs iterative training, periodic evaluation, metric logging,
+and checkpoint saving.
+
+**Parameters**
+
+- `train_dataloader` (`torch.utils.data.DataLoader`): DataLoader providing training data.
+
+**Returns**
+
+- `best_loss` (`float`): Best training loss achieved.
+- `best_collision_rate` (`float`): Best collision rate achieved during evaluation.
+
+##### `Trainer.export_onnx`
+
+```python
+export_onnx(self, output_path, batch_size = 2, opset_version = 14, dynamic_batch = True, device = None, verbose = False, onnx_export_kwargs = None)
+```
+
+Export the trained RQVAE model to ONNX format, including reconstructed output and codebook indices.
+
+**Parameters**
+
+- `output_path` (`str`): Path to save the ONNX model.
+- `batch_size` (`int, optional`): Batch size for the dummy input used in export.
+- `opset_version` (`int, optional`): ONNX opset version.
+- `dynamic_batch` (`bool, optional`): Whether to enable dynamic batch size.
+- `device` (`torch.device or str, optional`): Device to run the export (cpu or cuda). Default: model device.
+- `verbose` (`bool, optional`): Whether to print ONNX export debug info.
+- `onnx_export_kwargs` (`dict, optional`): Additional kwargs for torch.onnx.export.
+
+**Returns**
+
+- `bool`: True if export succeeded, False otherwise.
+
+**Examples**
+
+```python
+>>> model = RQVAEModel(in_dim=768, num_emb_list=[64,64], e_dim=64)
+>>> model.train()  # assume model has been trained
+>>> output_path = "rqevae.onnx"
+>>> success = model.export_onnx(output_path, batch_size=4, opset_version=14)
+>>> print(success)
+```
+True
+
+```python
+>>> # Export on specific device
+>>> success = model.export_onnx("rqevae_cpu.onnx", batch_size=4, device="cpu")
+>>> print(success)
+```
+True
+
+### `seq_trainer`
+
+Module: `torch_rechub.trainers.seq_trainer`
+
+#### `SeqTrainer`
+
+序列生成模型训练器.
+
+用于训练HSTU等序列生成模型。
+支持CrossEntropyLoss损失函数和生成式评估指标。
+
+**Parameters**
+
+- `model` (`nn.Module`): 要训练的模型
+- `optimizer_fn` (`torch.optim`): 优化器函数，默认为torch.optim.Adam
+- `optimizer_params` (`dict`): 优化器参数
+- `scheduler_fn` (`torch.optim.lr_scheduler`): torch调度器类
+- `scheduler_params` (`dict`): 调度器参数
+- `n_epoch` (`int`): 训练轮数，默认10
+- `earlystop_patience` (`int`): 早停耐心值，默认10
+- `device` (`str`): 设备，'cpu'或'cuda'，默认'cpu'
+- `gpus` (`list`): 多GPU的id列表，默认为[]
+- `model_path` (`str`): 模型保存路径，默认为'./'
+- `loss_type` (`str`): cross_entropy (default), legacy nce (full vocabulary),
+  or sampled_softmax (positive plus sampled catalog negatives).
+- `loss_params` (`dict`): For sampled_softmax: num_negatives=128 and optional
+  negative_similarity_threshold for normalized HLLM item vectors.
+- `accumulation_steps` (`int`): Positive number of microbatches per update, default 1.
+- `amp` (`bool`): CUDA float16 autocast/scaling, disabled by default.
+- `max_grad_norm` (`float, optional`): Clip unscaled gradients.
+- `eval_chunk_size` (`int`): Positive candidate scoring chunk size, default 4096.
+
+**Methods**
+
+- `fit` (`训练模型`)
+- `evaluate` (`评估模型`)
+- `predict` (`生成预测`)
+
+**Examples**
+
+```python
+>>> trainer = SeqTrainer(
+...     model=model,
+...     optimizer_fn=torch.optim.Adam,
+...     optimizer_params={'lr': 1e-3, 'weight_decay': 1e-5},
+...     device='cuda'
+... )
+>>> trainer.fit(
+...     train_loader=train_loader,
+...     val_loader=val_loader
+... )
+```
+
+##### `SeqTrainer.fit`
+
+```python
+fit(self, train_dataloader, val_dataloader = None)
+```
+
+训练模型.
+
+**Parameters**
+
+- `train_dataloader` (`DataLoader`): 训练数据加载器
+- `val_dataloader` (`DataLoader`): 验证数据加载器
+
+**Returns**
+
+- `dict` (`训练历史`)
+
+##### `SeqTrainer.train_one_epoch`
+
+```python
+train_one_epoch(self, data_loader, log_interval = 10)
+```
+
+Train the model for a single epoch.
+
+**Parameters**
+
+- `data_loader` (`DataLoader`): Training data loader.
+- `log_interval` (`int`): Interval (in steps) for logging average loss.
+
+**Returns**
+
+- `float` (`Average training loss for this epoch.`)
+
+##### `SeqTrainer.evaluate`
+
+```python
+evaluate(self, data_loader)
+```
+
+Evaluate the model on a validation/test data loader.
+
+Loss matches training: full-vocabulary CE or sampled candidate CE.
+Sampled loss uses fixed validation draws and is not full-vocabulary CE.
+accuracy is top-1 hit on the held-out next item only (useful as a
+ranking-style proxy metric).
+
+**Returns**
+
+- `tuple` (```(avg_loss, top1_accuracy)``.`)
+
+##### `SeqTrainer.predict`
+
+```python
+predict(self, data_loader, top_k = 10, filter_seen = False)
+```
+
+Return exact catalog top-k IDs with bounded scoring memory.
+
+top_k is a positive integer. PAD is always excluded. History filtering is opt-in because a repeated
+interaction may be the true next item. This is not sampled evaluation.
+
+##### `SeqTrainer.export_onnx`
+
+```python
+export_onnx(self, output_path, batch_size = 2, seq_length = 50, vocab_size = None, opset_version = 14, dynamic_batch = True, device = None, verbose = False, onnx_export_kwargs = None)
+```
+
+Export the trained sequence generation model to ONNX format.
+
+This method exports sequence generation models (e.g., HSTU) to ONNX format.
+Unlike other trainers, sequence models use positional arguments (seq_tokens, seq_time_diffs)
+instead of dict input, making ONNX export more straightforward.
+
+**Parameters**
+
+- `output_path` (`str`): Path to save the ONNX model file.
+- `batch_size` (`int`): Batch size for dummy input (default: 2).
+- `seq_length` (`int`): Sequence length for dummy input (default: 50).
+- `vocab_size` (`int, optional`): Vocabulary size for generating dummy tokens.
+  If None, will try to get from model.vocab_size.
+- `opset_version` (`int`): ONNX opset version (default: 14).
+- `dynamic_batch` (`bool`): Enable dynamic batch size (default: True).
+- `device` (`str, optional`): Device for export ('cpu', 'cuda', etc.).
+  If None, defaults to 'cpu' for maximum compatibility.
+- `verbose` (`bool`): Print export details (default: False).
+- `onnx_export_kwargs` (`dict, optional`): Extra kwargs forwarded to ``torch.onnx.export``.
+
+**Returns**
+
+- `bool` (`True if export succeeded, False otherwise.`)
+
+**Examples**
+
+```python
+>>> trainer = SeqTrainer(hstu_model, ...)
+>>> trainer.fit(train_dl, val_dl)
+>>> trainer.export_onnx("hstu.onnx", vocab_size=10000)
+
+>>> # Export on specific device
+>>> trainer.export_onnx("hstu.onnx", vocab_size=10000, device="cpu")
+```
+
+##### `SeqTrainer.visualization`
+
+```python
+visualization(self, seq_length = 50, vocab_size = None, batch_size = 2, depth = 3, show_shapes = True, expand_nested = True, save_path = None, graph_name = 'model', device = None, dpi = 300, **kwargs)
+```
+
+Draw the sequence model with generated token and time inputs.
+
+vocab_size defaults to model.vocab_size or model.item_num.
+Other options are shared with utils.visualization.visualize_model.
+Example: trainer.visualization(seq_length=20, save_path="model.png").
+
+## `utils/`
+
+### `data`
+
+Module: `torch_rechub.utils.data`
+
+#### `get_auto_embedding_dim`
+
+```python
+get_auto_embedding_dim(num_classes)
+```
+
+Calculate embedding dim by category size.
+
+Uses ``emb_dim = floor(6 * num_classes**0.25)`` from DCN (ADKDD'17).
+
+**Parameters**
+
+- `num_classes` (`int`): Number of categorical classes.
+
+**Returns**
+
+- `int`: Recommended embedding dimension.
+
+#### `get_loss_func`
+
+```python
+get_loss_func(task_type = 'classification')
+```
+
+Return default loss by task type.
+
+#### `get_metric_func`
+
+```python
+get_metric_func(task_type = 'classification')
+```
+
+Return default metric by task type.
+
+#### `generate_seq_feature`
+
+```python
+generate_seq_feature(data, user_col, item_col, time_col, item_attribute_cols = [], min_item = 0, shuffle = True, max_len = 50, in_batch_neg = False)
+```
+
+Generate sequence features and negatives for ranking.
+
+**Parameters**
+
+- `data` (`pd.DataFrame`): Raw interaction data.
+- `user_col` (`str`): User id column name.
+- `item_col` (`str`): Item id column name.
+- `time_col` (`str`): Timestamp column name.
+- `item_attribute_cols` (`list[str], optional`): Additional item attribute columns to include in sequences.
+- `min_item` (`int, default=0`): Minimum items per user; users below are dropped.
+- `shuffle` (`bool, default=True`): Shuffle train/val/test.
+- `max_len` (`int, default=50`): Max history length per sample; does not limit train/val/test splitting.
+- `in_batch_neg` (`bool, default=False`): Generate positive-only training rows for CTRTrainer. Validation and test
+  retain their original positive/negative pairs for supervised evaluation.
+
+**Returns**
+
+- `tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]`: Train, validation, and test data with sequence features.
+
+#### `df_to_dict`
+
+```python
+df_to_dict(data)
+```
+
+Convert DataFrame to dict inputs accepted by models.
+
+**Parameters**
+
+- `data` (`pd.DataFrame`): Input dataframe.
+
+**Returns**
+
+- `dict`: Mapping of column name to numpy array.
+
+#### `neg_sample`
+
+```python
+neg_sample(click_hist, item_size)
+```
+
+Uniformly sample an unseen item in [1, item_size], without unbounded retries.
+
+#### `pad_sequences`
+
+```python
+pad_sequences(sequences, maxlen = None, dtype = 'int32', padding = 'pre', truncating = 'pre', value = 0.0)
+```
+
+Pad list-of-lists sequences to equal length.
+
+Equivalent to ``tf.keras.preprocessing.sequence.pad_sequences``.
+
+**Parameters**
+
+- `sequences` (`Sequence[Sequence]`): Input sequences.
+- `maxlen` (`int, optional`): Maximum length; computed if None.
+- `dtype` (`str, default='int32'`)
+- `padding` (`{'pre', 'post'}, default='pre'`): Padding direction.
+- `truncating` (`{'pre', 'post'}, default='pre'`): Truncation direction.
+- `value` (`float, default=0.0`): Padding value.
+
+**Returns**
+
+- `np.ndarray`: Padded array of shape (n_samples, maxlen).
+
+#### `array_replace_with_dict`
+
+```python
+array_replace_with_dict(array, dic)
+```
+
+Replace values in numpy array using a mapping dict.
+
+**Parameters**
+
+- `array` (`np.ndarray`): Input array.
+- `dic` (`dict`): Mapping from old to new values.
+
+**Returns**
+
+- `np.ndarray`: Array with values replaced.
+
+#### `create_seq_features`
+
+```python
+create_seq_features(data, seq_feature_col = ['item_id', 'cate_id'], max_len = 50, drop_short = 3, shuffle = True)
+```
+
+Build user history sequences by time.
+
+**Parameters**
+
+- `data` (`pd.DataFrame`): Must contain ``user_id, item_id, cate_id, time``.
+- `seq_feature_col` (`list, default ['item_id', 'cate_id']`): Columns to generate sequence features.
+- `max_len` (`int, default=50`): Max history length.
+- `drop_short` (`int, default=3`): Drop users with sequence length < drop_short.
+- `shuffle` (`bool, default=True`): Shuffle outputs.
+
+**Returns**
+
+- `tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]`: Train/val/test splits with sequence features.
+
+#### `TorchDataset`
+
+No docstring provided.
+
+#### `PredictDataset`
+
+No docstring provided.
+
+#### `MatchDataGenerator`
+
+No docstring provided.
+
+##### `MatchDataGenerator.generate_dataloader`
+
+```python
+generate_dataloader(self, x_test_user, x_all_item, batch_size, num_workers = 8)
+```
+
+No docstring provided.
+
+#### `DataGenerator`
+
+No docstring provided.
+
+##### `DataGenerator.generate_dataloader`
+
+```python
+generate_dataloader(self, x_val = None, y_val = None, x_test = None, y_test = None, split_ratio = None, batch_size = 16, num_workers = 0)
+```
+
+No docstring provided.
+
+#### `SeqDataset`
+
+Sequence dataset for HSTU-style next-item prediction.
+
+**Parameters**
+
+- `seq_tokens` (`np.ndarray`): Token ids, shape ``(num_samples, seq_len)``.
+- `seq_positions` (`np.ndarray`): Position indices, shape ``(num_samples, seq_len)``.
+- `targets` (`np.ndarray`): Target token ids, shape ``(num_samples,)``.
+- `seq_time_diffs` (`np.ndarray`): Time-difference features, shape ``(num_samples, seq_len)``.
+
+**Shape**
+
+Output tuple: ``(seq_tokens, seq_positions, seq_time_diffs, target)``
+
+**Examples**
+
+```python
+>>> seq_tokens = np.random.randint(0, 1000, (100, 256))
+>>> seq_positions = np.arange(256)[np.newaxis, :].repeat(100, axis=0)
+>>> seq_time_diffs = np.random.randint(0, 86400, (100, 256))
+>>> targets = np.random.randint(0, 1000, (100,))
+>>> dataset = SeqDataset(seq_tokens, seq_positions, targets, seq_time_diffs)
+>>> len(dataset)
+```
+100
+
+#### `SequenceDataGenerator`
+
+Sequence data generator for HSTU-style models.
+
+Wraps :class:`SeqDataset` and builds train/val/test loaders.
+
+**Parameters**
+
+- `seq_tokens` (`np.ndarray`): Token ids, shape ``(num_samples, seq_len)``.
+- `seq_positions` (`np.ndarray`): Position indices, shape ``(num_samples, seq_len)``.
+- `targets` (`np.ndarray`): Target token ids, shape ``(num_samples,)``.
+- `seq_time_diffs` (`np.ndarray`): Time-difference features, shape ``(num_samples, seq_len)``.
+
+**Examples**
+
+```python
+>>> gen = SequenceDataGenerator(seq_tokens, seq_positions, targets, seq_time_diffs)
+>>> train_loader, val_loader, test_loader = gen.generate_dataloader(batch_size=32)
+```
+
+##### `SequenceDataGenerator.generate_dataloader`
+
+```python
+generate_dataloader(self, batch_size = 32, num_workers = 0, split_ratio = None, shuffle = True)
+```
+
+Generate dataloader(s) from the dataset.
+
+**Parameters**
+
+- `batch_size` (`int, default=32`): Batch size for DataLoader.
+- `num_workers` (`int, default=0`): Number of workers for DataLoader.
+- `split_ratio` (`tuple or None, default=None`): If None, returns a single DataLoader without splitting the data.
+  If tuple (e.g., (0.7, 0.1, 0.2)), splits dataset and returns
+  (train_loader, val_loader, test_loader).
+- `shuffle` (`bool, default=True`): Whether to shuffle data. Only applies when split_ratio is None.
+  When split_ratio is provided, train data is always shuffled.
+
+**Returns**
+
+- `tuple`: If split_ratio is None: returns (dataloader,)
+  If split_ratio is provided: returns (train_loader, val_loader, test_loader)
+
+**Examples**
+
+**Case 1: Data already split, just create loader**
+```python
+>>> train_gen = SequenceDataGenerator(train_data['seq_tokens'], ...)
+>>> train_loader = train_gen.generate_dataloader(batch_size=32)[0]
+
+```
+**Case 2: Auto-split data into train/val/test**
+```python
+>>> all_gen = SequenceDataGenerator(all_data['seq_tokens'], ...)
+>>> train_loader, val_loader, test_loader = all_gen.generate_dataloader(
+...     batch_size=32, split_ratio=(0.7, 0.1, 0.2))
+```
+
+#### `EmbDataset`
+
+Embedding dataset for loading precomputed feature vectors.
+
+Loads embeddings stored in ``.npy`` or ``.pt`` format and exposes
+them as a PyTorch ``Dataset`` for downstream training or inference.
+
+**Parameters**
+
+- `data_path` (`str`): Path to the embedding file. Supported formats are ``.npy``
+  (NumPy array) and ``.pt`` (PyTorch tensor saved via ``torch.save``).
+- `device` (`str, default='cpu'`): Device used when loading ``.pt`` tensors.
+
+**Shape**
+
+- **Input**
+  - `embeddings` (```(num_samples, emb_dim)```)
+- **Output**
+  - `tensor_emb` (```(emb_dim,)```)
+
+**Examples**
+
+```python
+>>> dataset = EmbDataset("embeddings.npy")
+>>> len(dataset)
+```
+10000
+```python
+>>> emb = dataset[0]
+>>> emb.shape
+```
+torch.Size([768])
+
+#### `TigerSeqDataset`
+
+Item histories with unique semantic token lists; user_bucket_size=0 disables user tokens.
+
+##### `TigerSeqDataset.get_new_tokens`
+
+```python
+get_new_tokens(self)
+```
+
+No docstring provided.
+
+##### `TigerSeqDataset.get_all_items`
+
+```python
+get_all_items(self, as_list = False)
+```
+
+No docstring provided.
+
+##### `TigerSeqDataset.get_prefix_allowed_tokens_fn`
+
+```python
+get_prefix_allowed_tokens_fn(self, tokenizer)
+```
+
+No docstring provided.
+
+##### `TigerSeqDataset.get_collate_fn`
+
+```python
+get_collate_fn(self, tokenizer)
+```
+
+No docstring provided.
+
+#### `Trie`
+
+No docstring provided.
+
+##### `Trie.def_prefix_allowed_tokens_fn`
+
+```python
+def_prefix_allowed_tokens_fn(self, candidate_trie)
+```
+
+No docstring provided.
+
+##### `Trie.append`
+
+```python
+append(self, trie, bos_token_id)
+```
+
+No docstring provided.
+
+##### `Trie.add`
+
+```python
+add(self, sequence)
+```
+
+No docstring provided.
+
+##### `Trie.get`
+
+```python
+get(self, prefix_sequence)
+```
+
+No docstring provided.
+
+##### `Trie.load_from_dict`
+
+```python
+load_from_dict(trie_dict)
+```
+
+No docstring provided.
+
+### `hstu_utils`
+
+Module: `torch_rechub.utils.hstu_utils`
+
+#### `RelPosBias`
+
+Legacy relative-position bias for attention.
+
+Used by ``HLLMTransformerBlock`` and kept for backward-compatible
+experiments. ``HSTUModel`` uses
+:class:`RelativeBucketedTimeAndPositionBias` instead, because HSTU Eq. 3
+adds a per-head bucketed ``rab^{p,t}`` term directly to attention scores.
+
+**Parameters**
+
+- `n_heads` (`int`): Number of attention heads.
+- `max_seq_len` (`int`): Maximum supported sequence length.
+- `num_buckets` (`int, default=32`): Number of relative position buckets.
+
+**Shape**
+
+Output: ``(1, n_heads, seq_len, seq_len)``
+
+##### `RelPosBias.forward`
+
+```python
+forward(self, seq_len)
+```
+
+Compute legacy relative-position bias.
+
+**Parameters**
+
+- `seq_len` (`int`): Sequence length ``L``.
+
+**Returns**
+
+- `Tensor` (`Relative-position bias with shape ``(1, n_heads, L, L)``.`)
+
+#### `RelativeBucketedTimeAndPositionBias`
+
+HSTU ``rab^{p,t}``: per-head bias on attention scores from (position-diff,
+time-diff) pairs, following the HSTU paper (Eq. 3) and Meta's reference
+``RelativeBucketedTimeAndPositionBasedBias``.
+
+The bias is added to ``Q K^T`` **before** the ``SiLU/N`` activation.
+
+**Parameters**
+
+- `n_heads` (`int`): Number of attention heads (per-head bias).
+- `max_seq_len` (`int`): Maximum sequence length. Sizes the position table to
+  ``2 * max_seq_len - 1`` slots.
+- `num_time_buckets` (`int, default=128`): Number of time-difference buckets; an extra OOB slot is appended so the
+  bucket index range is ``[0, num_time_buckets]`` inclusive.
+- `time_bucket_fn` (`{'sqrt', 'log'}, default='sqrt'`): Bucketization function applied to ``|dt|`` in minutes.
+- `time_bucket_divisor` (`float, default=1.0`): Divisor applied after ``sqrt``/``log`` so the bucket index range
+  actually utilizes ``[0, num_time_buckets]``.
+- `time_bucket_unit` (`{'minutes', 'seconds'}, default='minutes'`): Unit used before bucketization. ``'seconds'`` matches Meta's public
+  HSTU code path for MovieLens timestamps; ``'minutes'`` preserves the
+  earlier Torch-Rechub behavior.
+
+##### `RelativeBucketedTimeAndPositionBias.forward`
+
+```python
+forward(self, time_diffs = None, seq_len = None)
+```
+
+Return relative bias for adding to attention scores.
+
+``time_diffs`` follows the preprocessing convention where each entry is
+``anchor - timestamp[i]`` (or 0 at PAD). The pairwise difference
+``time_diffs[i] - time_diffs[j]`` recovers ``ts[j] - ts[i]``, so the
+anchor cancels.
+
+**Returns**
+
+- `Tensor`: ``(B, H, L, L)`` when ``time_diffs`` is given;
+  ``(1, H, L, L)`` (position-only) when ``time_diffs`` is ``None``.
+
+#### `VocabMask`
+
+Vocabulary mask to block invalid items at inference / ranking.
+
+**Parameters**
+
+- `vocab_size` (`int`): Vocabulary size.
+- `invalid_items` (`list, optional`): Token ids to mask out. ``[0]`` is the typical choice to drop PAD from
+  next-item recommendations.
+
+##### `VocabMask.apply_mask`
+
+```python
+apply_mask(self, logits, invalid_ids = None)
+```
+
+Return ``logits`` with invalid item positions pushed to ``-1e9``.
+
+**Parameters**
+
+- `logits` (`Tensor`): Score tensor with item vocabulary on the last
+  dimension. Ranking code typically passes ``(B, V)``.
+- `invalid_ids` (`Tensor, optional`): Per-row item ids to suppress, e.g.
+  a batch of users' historical item ids with shape ``(B, L)``.
+  A 1-D tensor is broadcast to every row.
+
+### `match`
+
+Module: `torch_rechub.utils.match`
+
+#### `gen_model_input`
+
+```python
+gen_model_input(df, user_profile, user_col, item_profile, item_col, seq_max_len, padding = 'pre', truncating = 'pre')
+```
+
+Merge user_profile and item_profile to df, pad and truncate history sequence feature.
+
+**Parameters**
+
+- `df` (`pd.DataFrame`): data with history sequence feature
+- `user_profile` (`pd.DataFrame`): user data
+- `user_col` (`str`): user column name
+- `item_profile` (`pd.DataFrame`): item data
+- `item_col` (`str`): item column name
+- `seq_max_len` (`int`): sequence length of every data
+- `padding` (`str, optional`): padding style, {'pre', 'post'}. Defaults to 'pre'.
+- `truncating` (`str, optional`): truncate style, {'pre', 'post'}. Defaults to 'pre'.
+
+**Returns**
+
+- `dict` (`The converted dict, which can be used directly into the input network`)
+
+#### `negative_sample`
+
+```python
+negative_sample(items_cnt_order, ratio, method_id = 0)
+```
+
+Negative Sample method for matching model.
+
+Reference: https://github.com/wangzhegeek/DSSM-Lookalike/blob/master/utils.py
+Updated with more methods and redesigned this function.
+
+**Parameters**
+
+- `items_cnt_order` (`dict`): the item count dict, the keys(item) sorted by value(count) in reverse order.
+- `ratio` (`int`): negative sample ratio, >= 1
+- `method_id` (`int, optional`)
+- `0` (`"random sampling",`)
+- `1` (`"popularity sampling method used in word2vec",`)
+- `2` (`"popularity sampling method by `log(count+1)+1e-6`",`)
+- `3` (`"tencent RALM sampling"}`.`)
+
+    `{
+        Defaults to 0.
+
+**Returns**
+
+- `list` (`sampled negative item list`)
+
+#### `inbatch_negative_sampling`
+
+```python
+inbatch_negative_sampling(scores, neg_ratio = None, hard_negative = False, generator = None)
+```
+
+Generate in-batch negative indices from a similarity matrix.
+
+This mirrors the offline ``negative_sample`` API by only returning sampled
+indices; score gathering is handled separately to keep responsibilities clear.
+
+**Parameters**
+
+- `scores` (`torch.Tensor`): similarity matrix with shape (batch_size, batch_size).
+- `neg_ratio` (`int, optional`): number of negatives for each positive sample.
+  Defaults to batch_size-1 when omitted or out of range.
+- `hard_negative` (`bool, optional`): whether to pick top-k highest scores as negatives
+  instead of uniform random sampling. Defaults to False.
+- `generator` (`torch.Generator, optional`): generator to control randomness for tests/reproducibility.
+
+**Returns**
+
+- `torch.Tensor` (`sampled negative indices with shape (batch_size, neg_ratio).`)
+
+#### `gather_inbatch_logits`
+
+```python
+gather_inbatch_logits(scores, neg_indices)
+```
+
+scores: (B, B)
+    scores[i][j] = user_i ⋅ item_j
+neg_indices: (B, K)
+    neg_indices[i] = the K negative items for user_i
+
+#### `generate_seq_feature_match`
+
+```python
+generate_seq_feature_match(data, user_col, item_col, time_col, item_attribute_cols = None, sample_method = 0, mode = 0, neg_ratio = 0, min_item = 0, in_batch_neg = False)
+```
+
+Generate sequence feature and negative sample for match.
+
+**Parameters**
+
+- `data` (`pd.DataFrame`): the raw data.
+- `user_col` (`str`): the col name of user_id
+- `item_col` (`str`): the col name of item_id
+- `time_col` (`str`): the col name of timestamp
+- `item_attribute_cols` (`list[str], optional`): the other attribute cols of item which you want to generate sequence feature. Defaults to `[]`.
+- `sample_method` (`int, optional`): the negative sample method `{
+  0: "random sampling",
+  1: "popularity sampling method used in word2vec",
+  2: "popularity sampling method by `log(count+1)+1e-6`",
+  3: "tencent RALM sampling"}`.
+  Defaults to 0.
+- `mode` (`int, optional`): the training mode, `{0:point-wise, 1:pair-wise, 2:list-wise}`. Defaults to 0.
+- `neg_ratio` (`int, optional`): negative sample ratio, >= 1. Defaults to 0.
+- `min_item` (`int, optional`): the min item each user must have. Defaults to 0.
+- `in_batch_neg` (`bool, optional`): generate positive-only pairs for MatchTrainer.
+  When enabled, mode and neg_ratio do not generate offline negatives.
+
+**Returns**
+
+- `pd.DataFrame` (`split train and test data with sequence features.`)
+
+#### `Annoy`
+
+A vector matching engine using Annoy library
+
+##### `Annoy.fit`
+
+```python
+fit(self, X)
+```
+
+Build the Annoy index from input vectors.
+
+**Parameters**
+
+- `X` (`np.ndarray`): input vectors with shape (n_samples, n_features)
+
+##### `Annoy.set_query_arguments`
+
+```python
+set_query_arguments(self, search_k)
+```
+
+Set query parameters for searching.
+
+**Parameters**
+
+- `search_k` (`int`): number of nodes to inspect during searching
+
+##### `Annoy.query`
+
+```python
+query(self, v, n)
+```
+
+Find the n nearest neighbors to vector v.
+
+**Parameters**
+
+- `v` (`np.ndarray`): query vector
+- `n` (`int`): number of nearest neighbors to return
+
+**Returns**
+
+- `tuple` (`(indices, distances) - lists of nearest neighbor indices and their distances`)
+
+#### `Milvus`
+
+A vector matching engine using Milvus database
+
+##### `Milvus.fit`
+
+```python
+fit(self, X)
+```
+
+Insert vectors into Milvus collection and build index.
+
+**Parameters**
+
+- `X` (`np.ndarray or torch.Tensor`): input vectors with shape (n_samples, n_features)
+
+##### `Milvus.process_result`
+
+```python
+process_result(results)
+```
+
+Process Milvus search results into standard format.
+
+**Parameters**
+
+- `results` (`raw search results from Milvus`)
+
+**Returns**
+
+- `tuple` (`(indices_list, distances_list) - processed results`)
+
+##### `Milvus.query`
+
+```python
+query(self, v, n)
+```
+
+Query Milvus for the n nearest neighbors to vector v.
+
+**Parameters**
+
+- `v` (`np.ndarray or torch.Tensor`): query vector
+- `n` (`int`): number of nearest neighbors to return
+
+**Returns**
+
+- `tuple` (`(indices, distances) - lists of nearest neighbor indices and their distances`)
+
+#### `Faiss`
+
+A vector matching engine using Faiss library
+
+##### `Faiss.fit`
+
+```python
+fit(self, X)
+```
+
+Train and build the index from input vectors.
+
+**Parameters**
+
+- `X` (`np.ndarray`): input vectors with shape (n_samples, dim)
+
+##### `Faiss.query`
+
+```python
+query(self, v, n)
+```
+
+Query the nearest neighbors for given vector.
+
+**Parameters**
+
+- `v` (`np.ndarray or torch.Tensor`): query vector
+- `n` (`int`): number of nearest neighbors to return
+
+**Returns**
+
+- `tuple` (`(indices, distances) - lists of nearest neighbor indices and distances`)
+
+##### `Faiss.set_query_arguments`
+
+```python
+set_query_arguments(self, nprobe = None, efSearch = None)
+```
+
+Set query parameters for search.
+
+**Parameters**
+
+- `nprobe` (`int`): number of clusters to search for IVF index
+- `efSearch` (`int`): search parameter for HNSW index
+
+##### `Faiss.save_index`
+
+```python
+save_index(self, filepath)
+```
+
+Save index to file for later use.
+
+##### `Faiss.load_index`
+
+```python
+load_index(self, filepath)
+```
+
+Load index from file.
+
+### `model_utils`
+
+Module: `torch_rechub.utils.model_utils`
+
+#### `extract_feature_info`
+
+```python
+extract_feature_info(model: nn.Module) -> Dict[str, Any]
+```
+
+Extract feature information from a torch-rechub model via reflection.
+
+**Parameters**
+
+- `model` (`nn.Module`): Model to inspect.
+
+**Returns**
+
+- `dict`: {
+  'features': list of unique Feature objects,
+  'input_names': ordered feature names,
+  'input_types': map name -> feature type,
+  'user_features': user-side features (dual-tower),
+  'item_features': item-side features (dual-tower),
+  }
+
+**Examples**
+
+```python
+>>> from torch_rechub.models.ranking import DeepFM
+>>> model = DeepFM(deep_features, fm_features, mlp_params)
+>>> info = extract_feature_info(model)
+>>> info['input_names']  # ['user_id', 'item_id', ...]
+```
+
+#### `generate_dummy_input`
+
+```python
+generate_dummy_input(features: List[Any], batch_size: int = 2, seq_length: int = 10, device: str = 'cpu') -> Tuple[torch.Tensor, Ellipsis]
+```
+
+Generate dummy input tensors based on feature definitions.
+
+**Parameters**
+
+- `features` (`list`): List of Feature objects (SparseFeature, DenseFeature, SequenceFeature).
+- `batch_size` (`int, default=2`): Batch size for dummy input.
+- `seq_length` (`int, default=10`): Sequence length for SequenceFeature.
+- `device` (`str, default='cpu'`): Device to create tensors on.
+
+**Returns**
+
+- `tuple of Tensor`: Tuple of tensors in the order of input features.
+
+**Examples**
+
+```python
+>>> features = [SparseFeature("user_id", 1000), SequenceFeature("hist", 500)]
+>>> dummy = generate_dummy_input(features, batch_size=4)
+>>> # Returns (user_id_tensor[4], hist_tensor[4, 10])
+```
+
+#### `generate_dummy_input_dict`
+
+```python
+generate_dummy_input_dict(features: List[Any], batch_size: int = 2, seq_length: int = 10, device: str = 'cpu') -> Dict[str, torch.Tensor]
+```
+
+Generate dummy input dict based on feature definitions.
+
+Similar to generate_dummy_input but returns a dict mapping feature names
+to tensors. This is the expected input format for torch-rechub models.
+
+**Parameters**
+
+- `features` (`list`): List of Feature objects (SparseFeature, DenseFeature, SequenceFeature).
+- `batch_size` (`int, default=2`): Batch size for dummy input.
+- `seq_length` (`int, default=10`): Sequence length for SequenceFeature.
+- `device` (`str, default='cpu'`): Device to create tensors on.
+
+**Returns**
+
+- `dict`: Dict mapping feature names to tensors.
+
+**Examples**
+
+```python
+>>> features = [SparseFeature("user_id", 1000)]
+>>> dummy = generate_dummy_input_dict(features, batch_size=4)
+>>> # Returns {"user_id": tensor[4]}
+```
+
+#### `generate_dynamic_axes`
+
+```python
+generate_dynamic_axes(input_names: List[str], output_names: Optional[List[str]] = None, batch_dim: int = 0, include_seq_dim: bool = True, seq_features: Optional[List[str]] = None) -> Dict[str, Dict[int, str]]
+```
+
+Generate dynamic axes configuration for ONNX export.
+
+**Parameters**
+
+- `input_names` (`list of str`): List of input tensor names.
+- `output_names` (`list of str, optional`): List of output tensor names. Default is ["output"].
+- `batch_dim` (`int, default=0`): Dimension index for batch size.
+- `include_seq_dim` (`bool, default=True`): Whether to include sequence dimension as dynamic.
+- `seq_features` (`list of str, optional`): List of feature names that are sequences.
+
+**Returns**
+
+- `dict`: Dynamic axes dict for torch.onnx.export.
+
+**Examples**
+
+```python
+>>> axes = generate_dynamic_axes(["user_id", "item_id"], seq_features=["hist"])
+>>> # Returns {"user_id": {0: "batch_size"}, "item_id": {0: "batch_size"}, ...}
+```
+
+### `mtl`
+
+Module: `torch_rechub.utils.mtl`
+
+#### `shared_task_layers`
+
+```python
+shared_task_layers(model)
+```
+
+get shared layers and task layers in multi-task model
+Authors: Qida Dong, dongjidan@126.com
+
+**Parameters**
+
+- `model` (`torch.nn.Module`): only support `[MMOE, SharedBottom, PLE, AITM]`
+
+**Returns**
+
+- `list[torch.nn.parameter]: parameters split to shared list and task list.`
+
+#### `gradnorm`
+
+```python
+gradnorm(loss_list, loss_weight, share_layer, initial_task_loss, alpha)
+```
+
+No docstring provided.
+
+#### `MetaBalance`
+
+MetaBalance Optimizer
+This method is used to scale the gradient and balance the gradient of each task.
+Authors: Qida Dong, dongjidan@126.com
+
+**Parameters**
+
+- `parameters` (`list`): the parameters of model
+- `relax_factor` (`float, optional`): the relax factor of gradient scaling (default: 0.7)
+- `beta` (`float, optional`): the coefficient of moving average (default: 0.9)
+
+##### `MetaBalance.step`
+
+```python
+step(self, losses)
+```
+
+No docstring provided.
+
+### `onnx_export`
+
+Module: `torch_rechub.utils.onnx_export`
+
+#### `ONNXWrapper`
+
+Wrap a dict-input model to accept positional args for ONNX.
+
+ONNX disallows dict inputs; this wrapper maps positional args back to dict
+before calling the original model.
+
+**Parameters**
+
+- `model` (`nn.Module`): Original dict-input model.
+- `input_names` (`list[str]`): Ordered feature names matching positional inputs.
+- `mode` (`{'user', 'item'}, optional`): For dual-tower models, set tower mode.
+
+**Examples**
+
+```python
+>>> wrapper = ONNXWrapper(dssm_model, ["user_id", "movie_id", "hist_movie_id"])
+>>> wrapper(user_id_tensor, movie_id_tensor, hist_tensor)
+```
+
+##### `ONNXWrapper.forward`
+
+```python
+forward(self, *args) -> torch.Tensor
+```
+
+Convert positional args to dict and call original model.
+
+##### `ONNXWrapper.restore_mode`
+
+```python
+restore_mode(self)
+```
+
+Restore the original mode of the model.
+
+#### `ONNXExporter`
+
+Main class for exporting Torch-RecHub models to ONNX format.
+
+This exporter handles the complexity of converting dict-input models to ONNX
+by automatically extracting feature information and wrapping the model.
+
+**Parameters**
+
+- `model` (`The PyTorch recommendation model to export.`)
+- `device` (`Device for export operations (default: 'cpu').`)
+
+**Examples**
+
+```python
+>>> exporter = ONNXExporter(deepfm_model)
+>>> exporter.export("model.onnx")
+
+>>> # For dual-tower models
+>>> exporter = ONNXExporter(dssm_model)
+>>> exporter.export("user_tower.onnx", mode="user")
+>>> exporter.export("item_tower.onnx", mode="item")
+```
+
+##### `ONNXExporter.export`
+
+```python
+export(self, output_path: str, mode: Optional[str] = None, dummy_input: Optional[Dict[str, torch.Tensor]] = None, batch_size: int = 2, seq_length: int = 10, opset_version: int = 14, dynamic_batch: bool = True, verbose: bool = False, onnx_export_kwargs: Optional[Dict[str, Any]] = None) -> bool
+```
+
+Export model to ONNX format.
+
+**Parameters**
+
+- `output_path` (`str`): Destination path.
+- `mode` (`{'user', 'item'}, optional`): For dual-tower, export specific tower; None exports full model.
+- `dummy_input` (`dict[str, Tensor], optional`): Example inputs; auto-generated if None.
+- `batch_size` (`int, default=2`): Batch size for dummy input generation.
+- `seq_length` (`int, default=10`): Sequence length for SequenceFeature.
+- `opset_version` (`int, default=14`): ONNX opset.
+- `dynamic_batch` (`bool, default=True`): Enable dynamic batch axes.
+- `verbose` (`bool, default=False`): Print export details.
+- `onnx_export_kwargs` (`dict, optional`): Extra keyword args forwarded to ``torch.onnx.export`` (e.g. ``operator_export_type``,
+  ``keep_initializers_as_inputs``, ``do_constant_folding``).
+
+**Notes**
+
+      - If you pass keys that overlap with the explicit parameters above
+        (like ``opset_version`` / ``dynamic_axes`` / ``input_names``), this function
+        will raise a ``ValueError`` to avoid ambiguous behavior.
+      - By default, this method tries the dynamo exporter first and
+        falls back to the legacy exporter automatically. To force one
+        path, pass ``onnx_export_kwargs={"dynamo": True}`` or
+        ``onnx_export_kwargs={"dynamo": False}``.
+      - Some kwargs (like ``dynamo``) are only available in newer PyTorch; unsupported
+        keys will be ignored for compatibility.
+
+**Returns**
+
+- `bool`: True if export succeeds.
+
+**Raises**
+
+- `RuntimeError`: If ONNX export fails.
+
+##### `ONNXExporter.get_input_info`
+
+```python
+get_input_info(self, mode: Optional[str] = None) -> Dict[str, Any]
+```
+
+Get information about model inputs.
+
+**Parameters**
+
+- `mode` (`For dual-tower models, "user" or "item".`)
+
+**Returns**
+
+- `Dict with input names, types, and shapes.`
+
+### `quantization`
+
+Module: `torch_rechub.utils.quantization`
+
+#### `quantize_model`
+
+```python
+quantize_model(input_path, output_path, mode = 'int8', *, per_channel = False, reduce_range = False, weight_type = 'qint8', optimize_model = False, op_types_to_quantize = None, nodes_to_quantize = None, nodes_to_exclude = None, extra_options = None, keep_io_types = True)
+```
+
+Save a quantized model and return ``output_path``.
+
+``int8`` uses ONNX Runtime dynamic quantization; its optional weight/node
+arguments are passed directly to ORT. ``fp16`` uses onnxconverter-common
+and keeps floating-point inputs/outputs in FP32 by default.
+
+``optimize_model`` is supported only by ORT versions older than 1.16.
+This utility is intended for small/medium models, not >2 GB external data.
+
+### `visualization`
+
+Module: `torch_rechub.utils.visualization`
+
+#### `visualize_model`
+
+```python
+visualize_model(model, input_data = None, batch_size = 2, seq_length = 10, depth = 3, show_shapes = True, expand_nested = True, save_path = None, graph_name = 'model', device = 'cpu', dpi = 300, **kwargs)
+```
+
+Draw one forward pass and return a torchview ComputationGraph.
+
+**Parameters**
+
+- `model` (`Model to draw. DataParallel wrappers are unwrapped automatically.`)
+- `input_data` (`Feature dict, Tensor, or tuple/list of positional inputs.`): If omitted, inputs are generated from the model's feature definitions.
+- `batch_size` (`Batch size for generated inputs.`)
+- `seq_length` (`Sequence length for generated inputs.`)
+- `depth` (`Module depth to show; -1 shows all layers.`)
+- `show_shapes` (`Show tensor shapes.`)
+- `expand_nested` (`Expand nested modules.`)
+- `save_path` (`PNG, SVG or PDF path. No suffix defaults to PDF.`): If omitted, display in Jupyter or open the system viewer.
+- `graph_name` (`Name of the graph.`)
+- `device` (`Tracing device, default CPU. Tracing on a different device uses`): a model copy; use the model's device to avoid copying large models.
+- `dpi` (`Output image resolution.`)
+- `**kwargs` (`Extra arguments for torchview.draw_graph.`)
+
+**Examples**
+
+```python
+>>> visualize_model(model, save_path="model.png", depth=3)
+```
+
+#### `display_graph`
+
+```python
+display_graph(graph, format = 'png')
+```
+
+Display a ComputationGraph in Jupyter and return its graphviz graph.

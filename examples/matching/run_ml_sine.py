@@ -1,21 +1,23 @@
+import os
 import sys
 
-sys.path.append("../..")
-
-import os
 import numpy as np
 import pandas as pd
 import torch
+from movielens_utils import match_evaluation
+from sklearn.preprocessing import LabelEncoder, MinMaxScaler
 
-from sklearn.preprocessing import MinMaxScaler, LabelEncoder
 from torch_rechub.models.matching import SINE
 from torch_rechub.trainers import MatchTrainer
-from torch_rechub.utils.match import generate_seq_feature_match, gen_model_input
-from torch_rechub.utils.data import df_to_dict, MatchDataGenerator
-from movielens_utils import match_evaluation
+from torch_rechub.utils.data import MatchDataGenerator, df_to_dict
+from torch_rechub.utils.match import gen_model_input, generate_seq_feature_match
+
+sys.path.append("../..")
 
 
-def get_movielens_data(data_path, load_cache=False, seq_max_len=50):
+def get_movielens_data(data_path, load_cache=False, seq_max_len=50, in_batch_neg=False):
+    os.makedirs("./data/ml-1m/saved/", exist_ok=True)
+    cache_path = "./data/ml-1m/saved/sine_inbatch.npy" if in_batch_neg else "./data/ml-1m/saved/data_cache.npy"
     data = pd.read_csv(data_path)
     data["cate_id"] = data["genres"].apply(lambda x: x.split("|")[0])
     sparse_features = ['user_id', 'movie_id']
@@ -27,31 +29,25 @@ def get_movielens_data(data_path, load_cache=False, seq_max_len=50):
         data[feature] = lbe.fit_transform(data[feature]) + 1
         feature_max_idx[feature] = data[feature].max() + 1
         if feature == user_col:
-            user_map = {encode_id + 1: raw_id for encode_id, raw_id in enumerate(lbe.classes_)}  #encode user id: raw user id
+            user_map = {encode_id + 1: raw_id for encode_id, raw_id in enumerate(lbe.classes_)}  # encode user id: raw user id
         if feature == item_col:
-            item_map = {encode_id + 1: raw_id for encode_id, raw_id in enumerate(lbe.classes_)}  #encode item id: raw item id
+            item_map = {encode_id + 1: raw_id for encode_id, raw_id in enumerate(lbe.classes_)}  # encode item id: raw item id
     np.save("./data/ml-1m/saved/raw_id_maps.npy", np.array((user_map, item_map), dtype=object))
 
     user_profile = data[["user_id"]].drop_duplicates('user_id')
     item_profile = data[["movie_id"]].drop_duplicates('movie_id')
 
-    if load_cache:  #if you have run this script before and saved the preprocessed data
-        x_train, y_train, x_test = np.load("./data/ml-1m/saved/data_cache.npy", allow_pickle=True)
+    if load_cache:  # if you have run this script before and saved the preprocessed data
+        x_train, y_train, x_test = np.load(cache_path, allow_pickle=True)
     else:
-        #Note: mode=2 means list-wise negative sample generate, saved in last col "neg_items"
-        df_train, df_test = generate_seq_feature_match(data,
-                                                       user_col,
-                                                       item_col,
-                                                       time_col="timestamp",
-                                                       item_attribute_cols=[],
-                                                       sample_method=1,
-                                                       mode=2,
-                                                       neg_ratio=3,
-                                                       min_item=0)
+        # Note: mode=2 means list-wise negative sample generate, saved in last
+        # col "neg_items"
+        df_train, df_test = generate_seq_feature_match(data, user_col, item_col, time_col="timestamp", item_attribute_cols=[], sample_method=1, mode=2, neg_ratio=3, min_item=0, in_batch_neg=in_batch_neg)
         x_train = gen_model_input(df_train, user_profile, user_col, item_profile, item_col, seq_max_len=seq_max_len, padding='pre', truncating='pre')
-        y_train = np.array([0] * df_train.shape[0])  #label=0 means the first pred value is positive sample
+        # label=0 means the first pred value is positive sample
+        y_train = np.array([0] * df_train.shape[0])
         x_test = gen_model_input(df_test, user_profile, user_col, item_profile, item_col, seq_max_len=seq_max_len, padding='pre', truncating='pre')
-        np.save("./data/ml-1m/saved/data_cache.npy", np.array((x_train, y_train, x_test), dtype=object))
+        np.save(cache_path, np.array((x_train, y_train, x_test), dtype=object))
 
     user_features, item_features, history_features, neg_item_features = ["user_id"], ["movie_id"], ["hist_movie_id"], ["neg_items"]
     num_users, num_items = feature_max_idx['user_id'], feature_max_idx['movie_id']
@@ -61,29 +57,19 @@ def get_movielens_data(data_path, load_cache=False, seq_max_len=50):
     return user_features, history_features, item_features, neg_item_features, num_users, num_items, x_train, y_train, all_item, test_user
 
 
-
-def main(dataset_path, model_name, epoch, learning_rate, batch_size, weight_decay, device, save_dir, seed, embedding_dim, hidden_dim, num_concept, num_intention, temperature, seq_max_len):
+def main(dataset_path, model_name, epoch, learning_rate, batch_size, weight_decay, device, save_dir, seed, embedding_dim, hidden_dim, num_concept, num_intention, temperature, seq_max_len, in_batch_neg=False):
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     torch.manual_seed(seed)
-    _, history_features, item_features, neg_item_features, _, num_items, x_train, y_train, all_item, test_user = get_movielens_data(dataset_path, seq_max_len=seq_max_len)
+    _, history_features, item_features, neg_item_features, _, num_items, x_train, y_train, all_item, test_user = get_movielens_data(dataset_path, seq_max_len=seq_max_len, in_batch_neg=in_batch_neg)
     dg = MatchDataGenerator(x=x_train, y=y_train)
-                    
+
     model = SINE(history_features, item_features, neg_item_features, num_items, embedding_dim, hidden_dim, num_concept, num_intention, seq_max_len, temperature=temperature)
 
-    #mode=1 means pair-wise learning
-    trainer = MatchTrainer(model,
-                           mode=2,
-                           optimizer_params={
-                               "lr": learning_rate,
-                               "weight_decay": weight_decay
-                           },
-                           n_epoch=epoch,
-                           device=device,
-                           model_path=save_dir,
-                           gpus=[0])
+    # mode=1 means pair-wise learning
+    trainer = MatchTrainer(model, mode=2, in_batch_neg=in_batch_neg, optimizer_params={"lr": learning_rate, "weight_decay": weight_decay}, n_epoch=epoch, device=device, model_path=save_dir)
 
-    train_dl, test_dl, item_dl = dg.generate_dataloader(test_user, all_item, batch_size=batch_size, num_workers=6)
+    train_dl, test_dl, item_dl = dg.generate_dataloader(test_user, all_item, batch_size=batch_size, num_workers=0)
     trainer.fit(train_dl)
 
     print("inference embedding")
@@ -104,8 +90,9 @@ if __name__ == '__main__':
     parser.add_argument('--weight_decay', type=float, default=1e-6)
     parser.add_argument('--device', default='cuda:0')
     parser.add_argument('--save_dir', default='./data/ml-1m/saved/')
-    parser.add_argument('--seed', type=int, default=2022)    
-    
+    parser.add_argument('--seed', type=int, default=2022)
+    parser.add_argument('--in_batch_neg', action='store_true', help='Use positive pairs and negatives from the batch')
+
     parser.add_argument('--embedding_dim', type=int, default=128)
     parser.add_argument('--hidden_dim', type=int, default=512)
     parser.add_argument('--num_concept', type=int, default=10)
@@ -114,9 +101,24 @@ if __name__ == '__main__':
     parser.add_argument('--seq_max_len', type=int, default=50)
 
     args = parser.parse_args()
-    main(args.dataset_path, args.model_name, args.epoch, args.learning_rate, args.batch_size, args.weight_decay, args.device,
-         args.save_dir, args.seed, args.embedding_dim, args.hidden_dim, args.num_concept, args.num_intention, 
-         args.temperature, args.seq_max_len)
+    main(
+        args.dataset_path,
+        args.model_name,
+        args.epoch,
+        args.learning_rate,
+        args.batch_size,
+        args.weight_decay,
+        args.device,
+        args.save_dir,
+        args.seed,
+        args.embedding_dim,
+        args.hidden_dim,
+        args.num_concept,
+        args.num_intention,
+        args.temperature,
+        args.seq_max_len,
+        in_batch_neg=args.in_batch_neg
+    )
 """
 python run_ml_sine.py
 """

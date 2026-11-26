@@ -18,14 +18,7 @@ class SequenceFeature(object):
         initializer(Initializer): Initializer the embedding layer weight.
     """
 
-    def __init__(self,
-                 name,
-                 vocab_size,
-                 embed_dim=None,
-                 pooling="mean",
-                 shared_with=None,
-                 padding_idx=None,
-                 initializer=RandomNormal(0, 0.0001)):
+    def __init__(self, name, vocab_size, embed_dim=None, pooling="mean", shared_with=None, padding_idx=None, initializer=RandomNormal(0, 0.0001)):
         self.name = name
         self.vocab_size = vocab_size
         if embed_dim is None:
@@ -42,7 +35,7 @@ class SequenceFeature(object):
 
     def get_embedding_layer(self):
         if not hasattr(self, 'embed'):
-            self.embed = self.initializer(self.vocab_size, self.embed_dim)
+            self.embed = self.initializer(self.vocab_size, self.embed_dim, padding_idx=self.padding_idx)
         return self.embed
 
 
@@ -74,7 +67,7 @@ class SparseFeature(object):
 
     def get_embedding_layer(self):
         if not hasattr(self, 'embed'):
-            self.embed = self.initializer(self.vocab_size, self.embed_dim)
+            self.embed = self.initializer(self.vocab_size, self.embed_dim, padding_idx=self.padding_idx)
         return self.embed
 
 
@@ -83,12 +76,12 @@ class DenseFeature(object):
 
     Args:
         name (str): feature's name.
-        embed_dim (int): embedding vector's length, the value fixed `1`.
+        embed_dim (int): embedding vector's length, the value fixed `1`. If you put a vector (torch.tensor) , replace the embed_dim with your vector dimension.
     """
 
-    def __init__(self, name):
+    def __init__(self, name, embed_dim=1):
         self.name = name
-        self.embed_dim = 1
+        self.embed_dim = embed_dim
 
     def __repr__(self):
         return f'<DenseFeature {self.name}>'

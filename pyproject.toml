@@ -1,0 +1,197 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "torch-rechub"
+version = "1.0.0"
+description = "A lightweight, efficient, and easy-to-use PyTorch recommendation system framework."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Datawhale", email = "opensource@datawhale.club" },
+]
+maintainers = [
+    { name = "1985312383", email = "thisisevy@foxmail.com" },
+]
+keywords = [
+    "recommendation",
+    "deep-learning",
+    "pytorch",
+    "ctr",
+    "matching",
+    "ranking",
+    "multi-task",
+    "recsys",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "torch>=2.6.0,<3",
+    "numpy>=1.26.4,<3",
+    "pandas>=2.1.0,<3",
+    "scikit-learn>=1.4.0,<2",
+    "tqdm>=4.66.0,<5",
+]
+
+[project.optional-dependencies]
+annoy = ["annoy>=1.17.2"]
+faiss = ["faiss-cpu==1.16.0"]
+milvus = ["pymilvus>=2.6.5,<3"]
+generative = [
+    "accelerate>=1.12.0,<2",
+    "transformers>=4.57.3,<5",
+]
+bigdata = [
+    "pyarrow>=21,<26",
+]
+onnx = [
+    "ml-dtypes>=0.5.0,<1",
+    "onnx>=1.17.0,<2",
+    "onnxscript>=0.2.0,<1",
+    "onnxruntime>=1.20.0,<2",
+    "onnxconverter-common>=1.14.0,<2",
+]
+visualization = [
+    "torchview>=0.2.7,<0.3",
+    "graphviz>=0.20,<1",
+]
+tracking = [
+    "wandb>=0.13.0",
+    "swanlab>=0.1.0",
+    "tensorboardX>=2.5",
+]
+test = [
+    "pytest>=6.0",
+    "pytest-cov>=2.0",
+]
+benchmark = [
+    "pyyaml>=6.0",
+]
+all = [
+    "annoy>=1.17.2",
+    "faiss-cpu==1.16.0",
+    "pymilvus>=2.6.5,<3",
+    "accelerate>=1.12.0,<2",
+    "transformers>=4.57.3,<5",
+    "pyarrow>=21,<26",
+    "ml-dtypes>=0.5.0,<1",
+    "onnx>=1.17.0,<2",
+    "onnxscript>=0.2.0,<1",
+    "onnxruntime>=1.20.0,<2",
+    "onnxconverter-common>=1.14.0,<2",
+    "torchview>=0.2.7,<0.3",
+    "graphviz>=0.20,<1",
+    "wandb>=0.13.0",
+    "swanlab>=0.1.0",
+    "tensorboardX>=2.5",
+    "pyyaml>=6.0",
+]
+dev = [
+    "pytest>=6.0",
+    "pytest-cov>=2.0",
+    "flake8>=3.8.0",
+    "yapf==0.43.0",
+    "isort==5.13.2",
+    "mypy>=0.800",
+    "pre-commit>=2.20.0",
+    "bandit>=1.7.0",
+    "toml>=0.10.2",
+    "pyarrow-stubs>=20.0",
+    "pyyaml>=6.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/datawhalechina/torch-rechub"
+Documentation = "https://datawhalechina.github.io/torch-rechub/"
+Repository = "https://github.com/datawhalechina/torch-rechub.git"
+Source = "https://github.com/datawhalechina/torch-rechub"
+Issues = "https://github.com/datawhalechina/torch-rechub/issues"
+Changelog = "https://datawhalechina.github.io/torch-rechub/zh/community/changelog.html"
+
+# UV 工具配置
+[dependency-groups]
+dev = [
+    "pytest>=6.0",
+    "pytest-cov>=2.0",
+    "flake8>=3.8.0",
+    "yapf==0.43.0",
+    "isort==5.13.2",
+    "mypy>=0.800",
+    "pre-commit>=2.20.0",
+    "bandit>=1.7.0",
+    "toml>=0.10.2",
+    "jupyter>=1.0.0",
+    "notebook>=6.0.0",
+    "pyyaml>=6.0",
+]
+
+# 工具配置
+[tool.hatch.build.targets.wheel]
+packages = ["torch_rechub"]
+
+[tool.isort]
+profile = "black"
+line_length = 248
+known_third_party = ["torch", "numpy", "pandas", "sklearn", "tqdm"]
+sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
+skip_glob = ["**/migrations/*", "**/__pycache__/*"]
+
+[tool.yapf]
+based_on_style = "google"
+column_limit = 248
+join_multiple_lines = false
+split_all_comma_separated_values = true
+split_before_logical_operator = true
+dedent_closing_brackets = true
+align_closing_bracket_with_visual_indent = true
+indent_width = 4
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q --strict-markers --tb=short"
+pythonpath = ["."]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: requires an external service (Milvus)",
+    "e2e: end-to-end tests",
+    "unit: marks tests as unit tests",
+]
+
+[tool.coverage.run]
+source = ["torch_rechub"]
+omit = ["*/tests/*", "*/examples/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if __name__ == .__main__.:",
+    "raise AssertionError",
+    "raise NotImplementedError",
+]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true

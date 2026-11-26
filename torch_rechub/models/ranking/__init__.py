@@ -1,5 +1,14 @@
-from .widedeep import WideDeep
-from .deepfm import DeepFM
-from .din import DIN
+__all__ = ['WideDeep', 'DeepFM', 'DCN', 'DCNv2', 'EDCN', 'AFM', 'FiBiNet', 'DeepFFM', 'BST', 'DIN', 'DIEN', 'FatDeepFFM', 'AutoInt']
+
+from .afm import AFM
+from .autoint import AutoInt
+from .bst import BST
 from .dcn import DCN
+from .dcn_v2 import DCNv2
 from .deepffm import DeepFFM, FatDeepFFM
+from .deepfm import DeepFM
+from .dien import DIEN
+from .din import DIN
+from .edcn import EDCN
+from .fibinet import FiBiNet
+from .widedeep import WideDeep

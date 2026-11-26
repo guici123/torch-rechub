@@ -1,0 +1,358 @@
+# Changelog / 更新日志
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+---
+
+## [1.0.0] - 2026-11-06
+
+<!-- Release notes generated using configuration in .github/release.yml at main -->
+
+## What's Changed
+### 🐛 Bug 修复 / Bug Fixes
+* fix(matching): count shared feature fields in SENet towers by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/276
+* fix(din): include dense context values in MLP input by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/280
+* fix(data): bound negative sampling and handle exhausted catalogs by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/281
+* fix(data): split full sequences before truncating histories by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/282
+* fix(callback): initialize early stopping from the first finite score by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/283
+* fix(trainers): persist best validation weights during training by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/284
+* fix(layers): preserve batch dimension for single-item inference by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/286
+* fix(serving): import optional backends only when selected by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/291
+* fix(features): isolate parameters between model instances by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/288
+* fix(features): restore per-feature embedding cache by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/294
+* fix(sequence): mask padding and correct SINE normalization by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/287
+* fix(trainers): simplify epoch learning-rate logging by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/290
+* fix(metrics): keep essential GAUC, Top-K and LogLoss boundary fixes by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/289
+* fix(generative): complete simple single-device training workflows by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/293
+### 🔧 模型更新 / Models
+* Add single-device in-batch DSSM training by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/272
+* feat(matching): extend in-batch sampling across recall models by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/274
+### ✨ 新特性 / Features
+* feat(ranking): add opt-in in-batch negative sampling by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/275
+* refactor: simplify ONNX quantization and preserve export compatibility by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/278
+* refactor: simplify shared model visualization by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/277
+* feat(trainers): configure batch loss and learning-rate progress by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/295
+
+
+**Full Changelog**: https://github.com/datawhalechina/torch-rechub/compare/v0.9.0...v1.0.0
+
+## [0.9.0] - 2026-09-14
+
+<!-- Release notes generated using configuration in .github/release.yml at main -->
+
+## What's Changed
+### 🐛 Bug 修复 / Bug Fixes
+* Fix HLLM embedding/vocab alignment; add generative data download workflow by @TyndaleLym in https://github.com/datawhalechina/torch-rechub/pull/241
+* fix: 让 TIGER 示例可运行并新增 MovieLens 脚本 by @TyndaleLym in https://github.com/datawhalechina/torch-rechub/pull/245
+* fix: 替换 4 处失效的奶牛快传数据链接（承接 #201） by @ksk2023 in https://github.com/datawhalechina/torch-rechub/pull/263
+* fix: support min-mode early stopping by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/266
+### 🔧 模型更新 / Models
+* Align HSTU with Meta reference; fix training/eval correctness by @TyndaleLym in https://github.com/datawhalechina/torch-rechub/pull/244
+* feat(mind): dynamic per-user interest count (issue #240) by @nsiddharth in https://github.com/datawhalechina/torch-rechub/pull/251
+### ✨ 新特性 / Features
+* 修改了census-Income，aliexpress，amazon-beauty，amazon-books，amazon-electro… by @Luxorion-12 in https://github.com/datawhalechina/torch-rechub/pull/252
+### 📝 文档更新 / Documentation
+* Update features.md by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/259
+* Update docs files by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/260
+
+## New Contributors
+* @TyndaleLym made their first contribution in https://github.com/datawhalechina/torch-rechub/pull/241
+* @ksk2023 made their first contribution in https://github.com/datawhalechina/torch-rechub/pull/263
+* @nsiddharth made their first contribution in https://github.com/datawhalechina/torch-rechub/pull/251
+
+**Full Changelog**: https://github.com/datawhalechina/torch-rechub/compare/v0.8.0...v0.9.0
+
+---
+
+
+
+## [0.8.0] - 2026-05-12
+
+<!-- Release notes generated using configuration in .github/release.yml at main -->
+
+## What's Changed
+### 🐛 Bug 修复 / Bug Fixes
+* fix docs by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/231
+* Fix stray 'uv' in pip install command by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/239
+### 🔧 模型更新 / Models
+* Update DIEN docs, example and refactor AUGRU by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/229
+* Refactor BST transformer; bump PyTorch to 1.10 by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/233
+* Adjust embedding outputs and unwrap ONNX scalar by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/237
+### 📦 依赖更新 / Dependencies
+* CI: add twine check and update pyproject metadata by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/227
+### 📝 文档更新 / Documentation
+* Update docs images: banner and logo by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/225
+* Add documentation diagrams and embed them by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/235
+* Create CITATION.cff by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/236
+* Improve tutorials: paths, features, DeepFM by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/238
+
+
+**Full Changelog**: https://github.com/datawhalechina/torch-rechub/compare/v0.7.0...v0.8.0
+
+---
+
+
+
+## [0.7.0] - 2026-04-21
+
+<!-- Release notes generated using configuration in .github/release.yml at main -->
+
+## What's Changed
+### ✨ 新特性 / Features
+* Add workflow and script to auto-generate API docs by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/208
+* Add dynamo ONNX export with fallback by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/212
+* Fix MIND and ComiRec list-wise logits shape by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/222
+### 🐛 Bug 修复 / Bug Fixes
+* fix: 修复英文首页 Get Started 按钮 404 链接 by @happydog-intj in https://github.com/datawhalechina/torch-rechub/pull/205
+* fix: 修复 docs/en/ 下所有 /en/ 前缀内部链接 404 by @happydog-intj in https://github.com/datawhalechina/torch-rechub/pull/206
+### 📝 文档更新 / Documentation
+* Consolidate README: English main, add Chinese by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/209
+* Update README by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/213
+* Revamp VitePress theme and docs navigation by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/214
+* Update images of tutorials by @queenyn in https://github.com/datawhalechina/torch-rechub/pull/203
+* Update custom.css by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/217
+* Revise Quick Start and add model tutorials by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/218
+* Update README images and add MIND list-wise docs by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/223
+
+## New Contributors
+* @happydog-intj made their first contribution in https://github.com/datawhalechina/torch-rechub/pull/205
+
+**Full Changelog**: https://github.com/datawhalechina/torch-rechub/compare/v0.6.0...v0.7.0
+
+---
+
+
+
+## [0.6.0] - 2026-03-18
+
+<!-- Release notes generated using configuration in .github/release.yml at main -->
+
+## What's Changed
+### ✨ 新特性 / Features
+* fix data.py by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/192
+* Update metric.py by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/194
+* feat: add NPU optional dependency for Huawei Ascend support by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/196
+* feat: add MMOE/ESMM notebook and training code by @Luxorion-12 in https://github.com/datawhalechina/torch-rechub/pull/200
+### 🐛 Bug 修复 / Bug Fixes
+* Update 00_QuickStart_CTR_DeepFM.ipynb && Update __init__.py by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/187
+### 📝 文档更新 / Documentation
+* docs: add model usage example documentation for 6 priority models by @sliortega295-ops in https://github.com/datawhalechina/torch-rechub/pull/185
+* docs: add model usage example documentation for DIN, DIEN, BST, MIND, PLE (Batch 2) by @sliortega295-ops in https://github.com/datawhalechina/torch-rechub/pull/188
+* add DSSM,DeepFM,DIN.ipynb by @queenyn in https://github.com/datawhalechina/torch-rechub/pull/199
+### 🔧 模型更新 / Models
+* Refactor BST transformer handling by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/195
+
+## New Contributors
+* @sliortega295-ops made their first contribution in https://github.com/datawhalechina/torch-rechub/pull/185
+* @queenyn made their first contribution in https://github.com/datawhalechina/torch-rechub/pull/199
+
+**Full Changelog**: https://github.com/datawhalechina/torch-rechub/compare/v0.5.0...v0.6.0
+
+---
+
+
+
+## [0.5.0] - 2026-02-27
+
+<!-- Release notes generated using configuration in .github/release.yml at main -->
+
+## What's Changed
+### 🐛 Bug 修复 / Bug Fixes
+* Update test_inbatch_sampling.py by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/174
+* Support padding_idx in embedding initializers by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/176
+### 📝 文档更新 / Documentation
+* Add note about examples/ sample datasets by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/182
+* Docs: add blog nav, fix examples, remove cached docs by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/183
+### 🔧 模型更新 / Models
+* Add new generative model: TIGER by @lw-xundong in https://github.com/datawhalechina/torch-rechub/pull/173
+* Feature/rqvae by @lw-xundong in https://github.com/datawhalechina/torch-rechub/pull/156
+### 📦 依赖更新 / Dependencies
+* Update ci.yml by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/181
+### 🔄 其他变更 / Other Changes
+* Update project_framework.png by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/175
+* Update ple.py by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/177
+* 多任务模型学习教程提交 by @Luxorion-12 in https://github.com/datawhalechina/torch-rechub/pull/179
+
+## New Contributors
+* @lw-xundong made their first contribution in https://github.com/datawhalechina/torch-rechub/pull/173
+* @Luxorion-12 made their first contribution in https://github.com/datawhalechina/torch-rechub/pull/179
+
+**Full Changelog**: https://github.com/datawhalechina/torch-rechub/compare/v0.4.0...v0.5.0
+
+---
+
+
+
+## [0.4.0] - 2026-02-11
+
+<!-- Release notes generated using configuration in .github/release.yml at main -->
+
+## What's Changed
+### 📝 文档更新 / Documentation
+* Update quick_start docs: params and outputs by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/171
+### 📦 依赖更新 / Dependencies
+* Fix the version of this package by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/170
+### 🔄 其他变更 / Other Changes
+* Update project_framework.png by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/169
+
+
+**Full Changelog**: https://github.com/datawhalechina/torch-rechub/compare/v0.3.0...v0.4.0
+
+---
+
+
+
+## [0.3.0] - 2026-02-05
+
+<!-- Release notes generated using configuration in .github/release.yml at main -->
+
+## What's Changed
+### ✨ 新特性 / Features
+* Inbatchsample by @zerolovesea in https://github.com/datawhalechina/torch-rechub/pull/128
+### 📝 文档更新 / Documentation
+* Enhance docs: ONNX, serving, tools, tutorials by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/165
+* Expand docs: community, guides, models, data by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/166
+### 🔄 其他变更 / Other Changes
+* Update favicon and logo images by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/164
+* Update docs imports to torch_rechub by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/167
+
+
+**Full Changelog**: https://github.com/datawhalechina/torch-rechub/compare/v0.2.0...v0.3.0
+
+---
+
+
+
+## [0.2.0] - 2026-01-11
+
+<!-- Release notes generated using configuration in .github/release.yml at main -->
+
+## What's Changed
+### 🐛 Bug 修复 / Bug Fixes
+* Update HSTULayer with L2 norm and SiLU attention by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/157
+* Add ONNX quantization scripts and tests, improve dataloader split  by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/161
+### 📝 文档更新 / Documentation
+* Update docs and README with new architecture image by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/154
+* Add comprehensive vector index docs (EN & ZH) by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/162
+* Update quick start and tracking docs in EN and ZH by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/163
+
+
+**Full Changelog**: https://github.com/datawhalechina/torch-rechub/compare/v0.1.0...v0.2.0
+
+---
+
+
+
+## [0.1.0] - 2025-12-17
+
+<!-- Release notes generated using configuration in .github/release.yml at main -->
+
+## What's Changed
+### ✨ 新特性 / Features
+* Update docs and tutorials && Add ONNX quantization utilities and enhance export  by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/150
+* REFACTOR+FEATURE: Standardize retrieval backends (ANNOY/FAISS/Milvus) by @ywuenthought in https://github.com/datawhalechina/torch-rechub/pull/151
+
+
+**Full Changelog**: https://github.com/datawhalechina/torch-rechub/compare/v0.0.6...v0.1.0
+
+---
+
+
+
+## [0.0.6] - 2025-12-11
+
+<!-- Release notes generated using configuration in .github/release.yml at main -->
+
+## What's Changed
+### ✨ 新特性 / Features
+* FEATURE: Support Streaming Parquet Dataset by @ywuenthought in https://github.com/datawhalechina/torch-rechub/pull/143
+* Docs & tracking polish: logger docstrings, README refresh, dependency tweak by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/146
+### 📝 文档更新 / Documentation
+* Refator Chinese documentation structure by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/145
+
+## New Contributors
+* @ywuenthought made their first contribution in https://github.com/datawhalechina/torch-rechub/pull/143
+
+**Full Changelog**: https://github.com/datawhalechina/torch-rechub/compare/v0.0.5...v0.0.6
+
+---
+
+
+
+## [0.0.5] - 2025-12-05
+
+<!-- Release notes generated using configuration in .github/release.yml at main -->
+
+## What's Changed
+### ✨ 新特性 / Features
+* Add torchview to Support Model Visualization && Update CI/CD and release workflows by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/141
+
+
+**Full Changelog**: https://github.com/datawhalechina/torch-rechub/compare/v0.0.4...v0.0.5
+
+---
+
+
+
+## [0.0.4] - 2025-12-04
+
+<!-- Release notes generated using configuration in .github/release.yml at main -->
+
+## What's Changed
+### ✨ 新特性 / Features
+* format code && add templates && add CI/CD && add test files by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/89
+* format code && add dependabot && update CI/CD && update test files by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/90
+* Update CI/CD, add uv function by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/92
+* feat: add l1/l2 support for trainers by @zerolovesea in https://github.com/datawhalechina/torch-rechub/pull/120
+* feat(ranking model): Implementation of AutoInt model by @zerolovesea in https://github.com/datawhalechina/torch-rechub/pull/121
+* Add HSTU model by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/122
+* Add HLLM model, scripts, and documentation  by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/125
+* Hllm model by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/129
+* Add onnx export feature by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/131
+* Add Releases CI by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/140
+### 🐛 Bug 修复 / Bug Fixes
+* Update ci.yml by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/97
+* fix(tutorial): update link to the full dataset in Multi-Task tutorial by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/105
+### 📝 文档更新 / Documentation
+* add initial version of docs project, adapt Python 3.12 and torch 2.0+ by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/77
+* add gitHub pages by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/78
+* add gitHub pages by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/79
+* docs: add contribution, model list(Chinese), new theme by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/80
+* update docs by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/81
+* add docs/introduction by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/82
+* update docs/faq, fix docs by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/83
+* update docs/index_page by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/84
+* update Chinese&English docs/tutorials&api-reference by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/85
+* delete docs/examples; add support for the faiss vector library api by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/86
+* Update readme$$logo by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/87
+* Create help_wanted.md by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/107
+* docs: fix Milvus.ipynb some bug by @loliw in https://github.com/datawhalechina/torch-rechub/pull/108
+* Migrate documentation to VitePress by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/124
+* Update Readme files by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/126
+* Update banner image by @1985312383 in https://github.com/datawhalechina/torch-rechub/pull/132
+
+
+## New Contributors
+* @loliw made their first contribution in https://github.com/datawhalechina/torch-rechub/pull/108
+* @zerolovesea made their first contribution in https://github.com/datawhalechina/torch-rechub/pull/120
+
+**Full Changelog**: https://github.com/datawhalechina/torch-rechub/commits/v0.0.4
+
+---
+
+
+
+## [0.0.3] - 2025-03-30
+
+### Added
+- Support 30+ mainstream recommendation models (ranking, matching, multi-task)
+- Add documentation of project
+- Add DIEN, BST model
+- Adapt to Python 3.12 and torch 2.0+
+- DenseFeature supports input vectors
+---
+
+*This file is auto-generated by GitHub Actions on release*

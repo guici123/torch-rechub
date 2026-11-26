@@ -1,6 +1,6 @@
 """
 Date: create on 12/05/2022, update on 20/05/2022
-References: 
+References:
     paper: (CIKM'2013) Learning Deep Structured Semantic Models for Web Search using Clickthrough Data
     url: https://posenhuang.github.io/papers/cikm2013_DSSM_fullversion.pdf
     code: https://github.com/bbruceyuan/DeepMatch-Torch/blob/main/deepmatch_torch/models/dssm.py
@@ -9,6 +9,7 @@ Authors: Mincai Lai, laimincai@shanghaitech.edu.cn
 
 import torch
 import torch.nn.functional as F
+
 from ...basic.layers import MLP, EmbeddingLayer
 
 
@@ -18,7 +19,9 @@ class DSSM(torch.nn.Module):
     Args:
         user_features (list[Feature Class]): training by the user tower module.
         item_features (list[Feature Class]): training by the item tower module.
-        temperature (float): temperature factor for similarity score, default to 1.0.
+        temperature (float): positive temperature for MatchTrainer's full-batch
+            in-batch cross entropy, default to 1.0. The point-wise forward path
+            continues to return sigmoid(cosine_similarity) without temperature scaling.
         user_params (dict): the params of the User Tower module, keys include:`{"dims":list, "activation":str, "dropout":float, "output_layer":bool`}.
         item_params (dict): the params of the Item Tower module, keys include:`{"dims":list, "activation":str, "dropout":float, "output_layer":bool`}.
     """
@@ -43,8 +46,11 @@ class DSSM(torch.nn.Module):
             return user_embedding
         if self.mode == "item":
             return item_embedding
+        if self.mode == "in_batch":
+            return user_embedding, item_embedding
 
-        # calculate cosine score
+
+# calculate cosine score
         y = torch.mul(user_embedding, item_embedding).sum(dim=1)
         # y = y / self.temperature
         return torch.sigmoid(y)
@@ -52,15 +58,19 @@ class DSSM(torch.nn.Module):
     def user_tower(self, x):
         if self.mode == "item":
             return None
-        input_user = self.embedding(x, self.user_features, squeeze_dim=True)  #[batch_size, num_features*deep_dims]
-        user_embedding = self.user_mlp(input_user)  #[batch_size, user_params["dims"][-1]]
+        # [batch_size, num_features*deep_dims]
+        input_user = self.embedding(x, self.user_features, squeeze_dim=True)
+        # [batch_size, user_params["dims"][-1]]
+        user_embedding = self.user_mlp(input_user)
         user_embedding = F.normalize(user_embedding, p=2, dim=1)  # L2 normalize
         return user_embedding
 
     def item_tower(self, x):
         if self.mode == "user":
             return None
-        input_item = self.embedding(x, self.item_features, squeeze_dim=True)  #[batch_size, num_features*embed_dim]
-        item_embedding = self.item_mlp(input_item)  #[batch_size, item_params["dims"][-1]]
+        # [batch_size, num_features*embed_dim]
+        input_item = self.embedding(x, self.item_features, squeeze_dim=True)
+        # [batch_size, item_params["dims"][-1]]
+        item_embedding = self.item_mlp(input_item)
         item_embedding = F.normalize(item_embedding, p=2, dim=1)
         return item_embedding

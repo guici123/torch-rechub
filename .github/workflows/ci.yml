@@ -1,0 +1,315 @@
+# ===================================================================
+# CI/CD 流程配置 - 代码质量检查、测试、构建、发布
+# ===================================================================
+# 触发条件：
+# - pull_request: 运行核心回归、兼容性检查和构建
+# - release: 仅运行发布流程（跳过已执行的检查）
+
+name: CI/CD Pipeline
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'torch_rechub/**'
+      - 'tutorials/**'
+      - 'examples/**'
+      - 'benchmarks/**'
+      - 'config/**'
+      - 'tests/**'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - '.github/workflows/ci.yml'
+  release:
+    types: [published]
+
+concurrency:
+  group: ci-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# 环境变量
+env:
+  PYTHON_VERSION: '3.10'
+  TORCH_VERSION: '2.6.0'
+  TORCH_INDEX_URL: 'https://download.pytorch.org/whl/cpu'
+  OMP_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  HF_HUB_OFFLINE: '1'
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  # ===================================================================
+  # 代码质量检查 (仅在 push/PR 时运行，release 时跳过)
+  # ===================================================================
+  lint:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    # 跳过 release 事件，因为代码已在合并时检查过
+    if: github.event_name != 'release'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Cache pip packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-lint-${{ hashFiles('pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-lint-
+            ${{ runner.os }}-pip-
+
+      - name: Install Dependencies
+        run: |
+          pip install --upgrade pip
+          # 安装特定版本的格式化工具以确保一致性（与 pyproject.toml 保持一致）
+          python -m pip install yapf==0.43.0 isort==5.13.2 "flake8>=3.8.0" "toml>=0.10.2"
+
+      - name: Format & Lint
+        run: |
+          # 步骤1: isort
+          isort --profile black torch_rechub/ examples/ tests/ benchmarks/
+          # 步骤2: yapf
+          yapf_style="{based_on_style: google, column_limit: 248, join_multiple_lines: false, split_all_comma_separated_values: true, split_before_logical_operator: true, dedent_closing_brackets: true, align_closing_bracket_with_visual_indent: true, indent_width: 4}"
+          yapf --in-place --recursive --style="$yapf_style" torch_rechub/ examples/ tests/ benchmarks/
+          
+          # 步骤3: 检查工作区是否干净，确认所有格式化都已提交
+          git diff --exit-code
+          
+          # 步骤4: 运行flake8进行最终的代码质量检查
+          flake8 --max-line-length=248 --extend-ignore=E203,W503,E501,E722,E402,F821,F523,E711,E741,F401,E265,C901,E301,E305,W293,E261,W291,W292,E111,E117,F841,E302 --max-complexity=30 torch_rechub/ examples/ tests/ benchmarks/
+
+  # 核心回归只跑一次；Milvus 需要外部服务，单独手动验证。
+  test:
+    name: Core Tests (Python 3.10, Torch 2.6)
+    runs-on: ubuntu-latest
+    needs: lint
+    if: github.event_name != 'release'
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install dependencies
+        run: |
+          python -m pip install "torch==$TORCH_VERSION" --index-url "$TORCH_INDEX_URL"
+          # Annoy 的本地编译缓存可能带有另一台 runner 的 CPU 指令集。
+          python -m pip cache remove annoy
+          python -m pip install --no-binary=annoy -e ".[test,generative,bigdata,onnx,annoy,faiss]" "torch==$TORCH_VERSION"
+          python -m pip check
+      - name: Run core tests
+        run: python -m pytest -c config/pytest.ini tests -m "not integration" --durations=10
+
+  # Windows 和较新的依赖版本只验证代表性训练、序列模型和导出接口。
+  compatibility:
+    name: Compatibility (${{ matrix.os }}, Python ${{ matrix.python }}, Torch ${{ matrix.torch }})
+    runs-on: ${{ matrix.os }}
+    needs: lint
+    if: github.event_name != 'release'
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: windows-latest, python: '3.10', torch: '2.6.0'}
+          - {os: ubuntu-latest, python: '3.13', torch: '2.9.1'}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install dependencies
+        run: |
+          python -m pip install "torch==${{ matrix.torch }}" --index-url "$TORCH_INDEX_URL"
+          python -m pip install -e ".[test,generative,onnx]" "torch==${{ matrix.torch }}"
+          python -m pip check
+      - name: Run compatibility tests
+        run: |
+          python -m pytest -c config/pytest.ini \
+            'tests/test_e2e_ranking.py::test_ranking_e2e[DIN]' \
+            'tests/test_e2e_multitask.py::test_multitask_e2e[MMOE]' \
+            tests/test_e2e_matching.py tests/test_inbatch_sampling.py \
+            tests/test_hstu_model.py tests/test_hllm_embedding_alignment.py tests/test_onnx_export.py
+
+  # ===================================================================
+  # 安全检查 (仅在 push/PR 时运行，release 时跳过)
+  # ===================================================================
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: lint
+    if: github.event_name != 'release'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install bandit
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit
+
+      - name: Run security scan
+        run: |
+          bandit -r torch_rechub/ -s B101,B311,B614 -x tests,docs,examples -f json -o bandit-report.json || true
+          bandit -r torch_rechub/ -s B101,B311,B614 -x tests,docs,examples -f txt
+
+      - name: Upload security scan results
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: bandit-security-report
+          path: bandit-report.json
+
+  # ===================================================================
+  # 构建检查 (仅在 push/PR 时运行，release 时跳过)
+  # ===================================================================
+  build:
+    name: Build Package
+    runs-on: ubuntu-latest
+    needs: [test, compatibility, security]
+    if: github.event_name != 'release'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine wheel setuptools
+
+      - name: Build package
+        run: |
+          python -m build
+
+      - name: Check package
+        run: |
+          twine check dist/*
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist-packages
+          path: dist/
+
+  # ===================================================================
+  # 自动发布到 PyPI 和 GitHub Release (使用 uv)
+  # 功能：
+  # - 从 GitHub Release 标签检出代码，自动更新版本、CHANGELOG 和 API 文档
+  # - 自动同步发布元信息到 main 并触发文档部署
+  # - 构建并发布到 PyPI
+  # - 上传构建产物到 GitHub Release 页面
+  # 注意：此 job 仅在 release 事件时运行，不依赖其他 job（代码已在合并时检查过）
+  # ===================================================================
+  publish:
+    name: Publish to PyPI & GitHub Release
+    runs-on: ubuntu-latest
+    # 不再依赖 build job，直接运行（代码质量已在 PR 合并时验证）
+    if: github.event_name == 'release' && github.event.action == 'published'
+    environment: pypi
+    permissions:
+      id-token: write   # Required for trusted publishing
+      contents: write   # Required for pushing metadata and uploading release assets
+      actions: write    # Required for triggering docs deployment
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Prepare version and changelog from Release
+        run: |
+          uv run --no-project --python ${{ env.PYTHON_VERSION }} --with packaging python config/prepare_release.py
+          uv lock
+
+      - name: Generate API docs
+        run: |
+          uv run --no-project --python ${{ env.PYTHON_VERSION }} python config/generate_api_md.py
+
+      - name: Build package with uv
+        id: build
+        run: |
+          uv build
+          echo "✅ Package built successfully"
+          ls -la dist/
+          # 输出构建产物文件名供后续步骤使用
+          echo "WHEEL_FILE=$(ls dist/*.whl)" >> $GITHUB_OUTPUT
+          echo "SDIST_FILE=$(ls dist/*.tar.gz)" >> $GITHUB_OUTPUT
+
+      - name: Check package metadata
+        run: uvx twine check dist/*
+
+      - name: Commit release metadata to main
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git add pyproject.toml uv.lock CHANGELOG.md docs/en/api/api.md docs/zh/api/api.md
+          if git diff --cached --quiet origin/main; then
+            echo "Release metadata already synced to main"
+          elif ! git diff --staged --quiet; then
+            git commit -m "chore(release): ${RELEASE_TAG} [skip ci]"
+            # 只将本次发布元信息提交接到最新 main，安装包已从标签代码构建。
+            git rebase --onto origin/main HEAD^
+            git push origin HEAD:main
+          fi
+
+      - name: Trigger docs deploy
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run deploy.yml --ref main
+
+      - name: Publish to PyPI
+        env:
+          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          uv publish
+          echo "🚀 Published to PyPI successfully!"
+
+      - name: Upload release assets to GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: |
+            dist/*.whl
+            dist/*.tar.gz
+          fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

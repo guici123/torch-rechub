@@ -1,15 +1,16 @@
-import re
-import os
 import gc
-import time
-import joblib
-import random
+import os
 import pickle
+import random
+import re
+import time
+
+import joblib
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
-from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler
+from tqdm import tqdm
 
 random.seed(2022)
 np.random.seed(2022)
@@ -22,7 +23,8 @@ write_features_map_path = save_path + 'features_map.pkl'
 write_features_path = save_path + 'all_features'
 sparse_columns = ['101', '121', '122', '124', '125', '126', '127', '128', '129', '205', '206', '207', '210', '216', '508', '509', '702', '853', '301', '109_14', '110_14', '127_14', '150_14']
 dense_columns = ['109_14', '110_14', '127_14', '150_14', '508', '509', '702', '853']
-uses_columns = [col for col in sparse_columns] + ['D' + col for col in dense_columns]
+uses_columns = [col for col in sparse_columns] + \
+    ['D' + col for col in dense_columns]
 
 
 def preprocess_data(mode='train'):
@@ -78,7 +80,7 @@ def preprocess_data(mode='train'):
                             if v in vocabulary[k]:
                                 vocabulary[k][v] += 1
                             else:
-                                vocabulary[k][v] = 0
+                                vocabulary[k][v] = 1
 
     if mode == "train":
         print('before filter low freq:')
@@ -87,7 +89,7 @@ def preprocess_data(mode='train'):
         new_vocabulary = dict(zip(sparse_columns, [[] for _ in range(len(sparse_columns))]))
         for k, v in vocabulary.items():
             for k1, v1 in v.items():
-                if v1 > 10:
+                if v1 >= 10:
                     new_vocabulary[k].append(k1)
         vocabulary = new_vocabulary
         print('after filter low freq:')

@@ -30,7 +30,7 @@ def activation_layer(act_name):
 
     Args:
         act_name: str or nn.Module, name of activation function
-    
+
     Returns:
         act_layer: activation layer
     """
@@ -45,6 +45,8 @@ def activation_layer(act_name):
             act_layer = nn.PReLU()
         elif act_name.lower() == "softmax":
             act_layer = nn.Softmax(dim=1)
+        elif act_name.lower() == 'leakyrelu':
+            act_layer = nn.LeakyReLU()
     elif issubclass(act_name, nn.Module):
         act_layer = act_name()
     else:

@@ -10,8 +10,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from torch_rechub.basic.features import DenseFeature, SparseFeature, SequenceFeature
-from torch_rechub.basic.layers import EmbeddingLayer, MLP
+from torch_rechub.basic.features import DenseFeature, SequenceFeature, SparseFeature
+from torch_rechub.basic.layers import MLP, EmbeddingLayer
 
 
 class SASRec(torch.nn.Module):
@@ -21,16 +21,25 @@ class SASRec(torch.nn.Module):
         max_len: The length of the sequence feature.
         num_blocks: The number of stacks of attention modules.
         num_heads: The number of heads in MultiheadAttention.
+        item_feature: Optional item feature for in-batch negative sampling mode.
 
     """
-    def __init__(self,
-                 features,
-                 max_len=50,
-                 dropout_rate=0.5,
-                 num_blocks=2,
-                 num_heads=1,
-                 ):
+
+    def __init__(
+        self,
+        features,
+        max_len=50,
+        dropout_rate=0.5,
+        num_blocks=2,
+        num_heads=1,
+        item_feature=None,
+    ):
         super(SASRec, self).__init__()
+
+        self.features = features
+        self.item_feature = item_feature  # Optional: for in-batch negative sampling
+        self.mode = None  # For inference: "user" or "item"
+        self.max_len = max_len
 
         self.features = features
 
@@ -51,9 +60,7 @@ class SASRec(torch.nn.Module):
             new_attn_layernorm = torch.nn.LayerNorm(self.embed_dim, eps=1e-8)
             self.attention_layernorms.append(new_attn_layernorm)
 
-            new_attn_layer = torch.nn.MultiheadAttention(self.embed_dim,
-                                                         num_heads,
-                                                         dropout_rate)
+            new_attn_layer = torch.nn.MultiheadAttention(self.embed_dim, num_heads, dropout_rate)
             self.attention_layers.append(new_attn_layer)
 
             new_fwd_layernorm = torch.nn.LayerNorm(self.embed_dim, eps=1e-8)
@@ -63,26 +70,24 @@ class SASRec(torch.nn.Module):
             self.forward_layers.append(new_fwd_layer)
 
     def seq_forward(self, x, embed_x_feature):
-        x = x['seq']
+        x = x[self.features[0].name]
 
-        embed_x_feature *= self.features[0].embed_dim ** 0.5
-        embed_x_feature = embed_x_feature.squeeze() # (bacth_size, max_len, embed_dim)
+        embed_x_feature *= self.features[0].embed_dim**0.5
 
-        positions = np.tile(np.array(range(x.shape[1])), [x.shape[0], 1])
+        positions = torch.arange(x.size(1), device=x.device).expand(x.size(0), -1)
 
-        embed_x_feature += self.position_emb(torch.LongTensor(positions))
+        embed_x_feature += self.position_emb(positions)
         embed_x_feature = self.emb_dropout(embed_x_feature)
 
-        timeline_mask = torch.BoolTensor(x == 0)
+        timeline_mask = x == 0
         embed_x_feature *= ~timeline_mask.unsqueeze(-1)
 
-        attention_mask = ~torch.tril(torch.ones((embed_x_feature.shape[1], embed_x_feature.shape[1]), dtype=torch.bool))
+        attention_mask = ~torch.tril(torch.ones((x.size(1), x.size(1)), dtype=torch.bool, device=x.device))
 
         for i in range(len(self.attention_layers)):
             embed_x_feature = torch.transpose(embed_x_feature, 0, 1)
             Q = self.attention_layernorms[i](embed_x_feature)
-            mha_outputs, _ = self.attention_layers[i](Q, embed_x_feature, embed_x_feature,
-                                                      attn_mask=attention_mask)
+            mha_outputs, _ = self.attention_layers[i](Q, embed_x_feature, embed_x_feature, attn_mask=attention_mask)
 
             embed_x_feature = Q + mha_outputs
             embed_x_feature = torch.transpose(embed_x_feature, 0, 1)
@@ -95,19 +100,78 @@ class SASRec(torch.nn.Module):
 
         return seq_output
 
-    def forward(self, x):
-        embedding = self.item_emb(x, self.features) # (batch_size, 3, max_len, embed_dim)
-        seq_embed, pos_embed, neg_embed = embedding[:, 0], embedding[:, 1], embedding[:, 2] # (batch_size, max_len, embed_dim)
+    def user_tower(self, x):
+        """Compute user embedding for in-batch negative sampling.
+        Takes the last valid position's output as user representation.
+        """
+        if self.mode == "item":
+            return None
+        # Get sequence embedding
+        seq_embed = self.item_emb(x, self.features[:1])[:, 0]  # Only use seq feature
+        seq_output = self.seq_forward(x, seq_embed)  # [batch_size, max_len, embed_dim]
 
-        seq_output = self.seq_forward(x, seq_embed) # (batch_size, max_len, embed_dim)
+        # Get the last valid position for each sequence
+        seq = x[self.features[0].name]
+        positions = torch.arange(seq.size(1), device=seq.device).expand_as(seq)
+        seq_lens = positions.masked_fill(seq == 0, -1).max(dim=1).values.clamp(min=0)
+        batch_idx = torch.arange(seq_output.size(0), device=seq_output.device)
+        user_emb = seq_output[batch_idx, seq_lens]  # [batch_size, embed_dim]
+
+        if self.mode == "user":
+            return user_emb
+        return user_emb.unsqueeze(1)  # [batch_size, 1, embed_dim]
+
+    def item_tower(self, x):
+        """Compute item embedding for in-batch negative sampling."""
+        if self.mode == "user":
+            return None
+        if self.item_feature is not None or self.mode in ("in_batch", "item"):
+            if self.item_feature is not None:
+                item_ids = x[self.item_feature.name]
+            elif self.mode == 'item':
+                item_ids = x['target']
+            else:
+                item_ids = x[self.features[1].name]
+                if item_ids.dim() == 2:
+                    seq = x[self.features[0].name]
+                    positions = torch.arange(seq.size(1), device=seq.device).expand_as(seq)
+                    last = positions.masked_fill(seq == 0, -1).max(dim=1).values.clamp(min=0)
+                    item_ids = item_ids.gather(1, last.unsqueeze(1)).squeeze(1)
+            # Use the embedding layer to get item embeddings
+            item_emb = self.item_emb.embed_dict[self.features[0].name](item_ids)
+            if self.mode == "item":
+                return item_emb
+            return item_emb.unsqueeze(1)  # [batch_size, 1, embed_dim]
+        return None
+
+    def forward(self, x):
+        # Support inference mode
+        if self.mode == "user":
+            return self.user_tower(x)
+        if self.mode == "item":
+            return self.item_tower(x)
+        if self.mode == "in_batch":
+            return self.user_tower(x), self.item_tower(x)
+
+        # In-batch negative sampling mode
+        if self.item_feature is not None:
+            user_emb = self.user_tower(x)  # [batch_size, 1, embed_dim]
+            item_emb = self.item_tower(x)  # [batch_size, 1, embed_dim]
+            return torch.mul(user_emb, item_emb).sum(dim=-1).squeeze()
+
+        # Original behavior: pairwise loss with pos/neg sequences
+        embedding = self.item_emb(x, self.features)
+        seq_embed, pos_embed, neg_embed = embedding[:, 0], embedding[:, 1], embedding[:, 2]
+        seq_output = self.seq_forward(x, seq_embed)
 
         pos_logits = (seq_output * pos_embed).sum(dim=-1)
-        neg_logits = (seq_output * neg_embed).sum(dim=-1) # (batch_size, max_len)
+        neg_logits = (seq_output * neg_embed).sum(dim=-1)
 
         return pos_logits, neg_logits
 
 
 class PointWiseFeedForward(torch.nn.Module):
+
     def __init__(self, hidden_units, dropout_rate):
         super(PointWiseFeedForward, self).__init__()
 
